@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Class CPORGateway.
+ *
+ * An OR gateway.
+ *
+ * @package progression
+ * @subpackge php/model
+ *
+ * @version 1.0.0
+ * @author Dr. Dipl.-Inf. Thomas M. Prinz
+ *
+ * @persistent
+ * @inParent
+ */
+class CPORGateway extends CPGateway {
+
+    use CPORGatewayPersistentTrait;
+
+}
+?>
