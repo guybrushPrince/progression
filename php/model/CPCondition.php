@@ -25,6 +25,16 @@ class CPCondition extends CPModel {
     protected string $condition;
 
     /**
+     * Constructor.
+     * @param string|null $id The id.
+     * @param string|null $condition The condition.
+     */
+    public function __construct(?string $id = null, ?string $condition = null) {
+        if (!is_null($id)) $this->id = $id;
+        if (!is_null($condition)) $this->condition = $condition;
+    }
+
+    /**
      * Evaluate the condition.
      * @param array $context
      * @return bool

@@ -1,24 +1,6 @@
 <?php
 
-if (class_exists('CliffSerializable')) {
-
-    /**
-     * Class APermanentObject.
-     *
-     * The Coast implementation of the abstract permanent object class.
-     *
-     * @package progression
-     * @subpackge php/permanent
-     *
-     * @version 1.0.0
-     * @author Dr. Dipl.-Inf. Thomas M. Prinz
-     */
-    abstract class APermanentObject extends CliffSerializable implements IProgressionSerializable {
-
-        use CoastSerializableStandard;
-
-    }
-} else {
+if (!class_exists('CliffSerializable')) {
 
     if (!class_exists('APermanentObject')) {
         /**
@@ -39,7 +21,12 @@ if (class_exists('CliffSerializable')) {
              * @throws NotImplementedException
              */
             public function getPermanentId() : string|int {
-                throw new NotImplementedException('Please provide an implementation of getPermanentId().');
+                try {
+                    throw new NotImplementedException('Please provide an implementation of getPermanentId().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return '';
             }
 
             /**
@@ -53,7 +40,12 @@ if (class_exists('CliffSerializable')) {
              * @inheritDoc
              */
             public static function getPermanentObject(int|string $id, string $class): ?IProgressionSerializable {
-                throw new NotImplementedException('Please provide an implementation of getPermanentObject().');
+                try {
+                    throw new NotImplementedException('Please provide an implementation of getPermanentObject().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return null;
             }
 
             /**
@@ -61,7 +53,12 @@ if (class_exists('CliffSerializable')) {
              * @throws NotImplementedException
              */
             public function createPermanentObject() : bool {
-                throw new NotImplementedException('Please provide an implementation of createPermanentObject().');
+                try {
+                    throw new NotImplementedException('Please provide an implementation of createPermanentObject().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return false;
             }
 
             /**
@@ -69,18 +66,61 @@ if (class_exists('CliffSerializable')) {
              * @throws NotImplementedException
              */
             public function updatePermanentObject() : bool {
-                throw new NotImplementedException('Please provide an implementation of updatePermanentObject().');
+                try {
+                    throw new NotImplementedException('Please provide an implementation of updatePermanentObject().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return false;
             }
 
             /**
              * @inheritDoc
              * @throws NotImplementedException
              */
-            public static function getPermanentObjectsWhere(string $field, mixed $value, string $class) : array {
-                throw new NotImplementedException('Please provide an implementation of getPermanentObjectsWhere().');
+            public static function getPermanentObjectsWhere(string $field, mixed $value, string $class,
+                                                            ?int $limit = null) : array {
+                try {
+                    throw new NotImplementedException('Please provide an implementation of getPermanentObjectsWhere().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return [];
+            }
+
+            /**
+             * @inheritDoc
+             * @throws NotImplementedException
+             */
+            public static function getPermanentObjectsWhereAll(array $map, string $class, ?int $limit = null) : array {
+                try {
+                    throw new NotImplementedException('Please provide an implementation of getPermanentObjectsWhereAll().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return [];
             }
 
         }
+    }
+
+} else {
+
+    /**
+     * Class APermanentObject.
+     *
+     * The Coast implementation of the abstract permanent object class.
+     *
+     * @package progression
+     * @subpackge php/permanent
+     *
+     * @version 1.0.0
+     * @author Dr. Dipl.-Inf. Thomas M. Prinz
+     */
+    abstract class APermanentObject extends CliffSerializable implements IProgressionSerializable {
+
+        use CoastSerializableStandard;
+
     }
 }
 ?>

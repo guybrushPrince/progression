@@ -158,7 +158,7 @@ class LocalState extends APermanentObject {
                 return null;
             }
             else if ($token->isLive()) {
-                Engine::getLogger()->debug('Token', $token->getPermanentId(), 'is dead');
+                Engine::getLogger()->debug('Token', $token->getPermanentId(), 'is live');
                 $oneLive = true;
             }
             else if (!$token->isDead()) { // Previously dead or previously live
@@ -181,6 +181,10 @@ class LocalState extends APermanentObject {
      * @throws Exception
      */
     public function inform() : void {
+        if ($this->getState() !== TokenState::CLEAR) {
+            throw new SecurityException('The system tries to execute the same node twice.');
+        }
+
         $executable = $this->isExecutable();
 
         Engine::getLogger()->debug('Executability of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), ':', $executable);
@@ -213,15 +217,14 @@ class LocalState extends APermanentObject {
         }
 
         // Register the new state of this task.
-        $this->setStatePermanently($executable ? TokenState::LIVE : TokenState::PREVIOUSLY_DEAD);
         $this->setContextPermanently($nextContext);
+        $this->setStatePermanently($executable ? TokenState::LIVE : TokenState::PREVIOUSLY_DEAD);
 
         if ($executable) {
             // Execute the node if it represents a task.
             if ($this->getNode() instanceof CPTask) {
                 $async = true;
                 Engine::getLogger()->debug('Register', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to be executed');
-                Engine::instance()->registerExecutable($this);
             } else {
                 $async = false;
                 Engine::getLogger()->log('Virtually execute ', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId());
@@ -238,17 +241,17 @@ class LocalState extends APermanentObject {
 
         } else { // The node is skippable (as it is not null and not executable).
             Engine::getLogger()->log('Skip ', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId());
+            $this->setStatePermanently(TokenState::PREVIOUSLY_DEAD);
             foreach ($this->getOutTokens() as $outToken) {
-                $outToken->setStatePermanently(TokenState::DEAD);
                 $outToken->setContextPermanently($nextContext);
+                $outToken->setStatePermanently(TokenState::DEAD);
                 Engine::getLogger()->debug('Set outgoing token', $outToken->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', $outToken->getState());
             }
             foreach ($this->getOutIncidents() as $outIncident) {
-                $outIncident->setStatePermanently(TokenState::DEAD);
                 $outIncident->setContextPermanently([]);
+                $outIncident->setStatePermanently(TokenState::DEAD);
                 Engine::getLogger()->debug('Set outgoing event', $outIncident->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', $outIncident->getState());
             }
-            $this->setStatePermanently(TokenState::PREVIOUSLY_DEAD);
         }
     }
 
@@ -267,32 +270,114 @@ class LocalState extends APermanentObject {
         });
         $oneLive = false;
 
+        $isXOR = ($this instanceof CPXORGateway);
+
         // Check the conditional tokens.
         foreach ($nonDefault as $outToken) {
-            if ($outToken->isFulfilled($context)) {
+            $outToken->setContextPermanently($context);
+            if ((!$isXOR || !$oneLive) && $outToken->isFulfilled($context)) {
                 $oneLive = true;
+                Engine::getLogger()->debug('Set conditional outgoing token', $outToken->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', TokenState::LIVE);
                 $outToken->setStatePermanently(TokenState::LIVE);
             } else {
+                Engine::getLogger()->debug('Set conditional outgoing token', $outToken->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', TokenState::DEAD);
                 $outToken->setStatePermanently(TokenState::DEAD);
             }
-            $outToken->setContextPermanently($context);
-            Engine::getLogger()->debug('Set conditional outgoing token', $outToken->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', $outToken->getState());
         }
-        // Set the unconditional tokens if no token was executed yet.
+        // Set the unconditional tokens to LIVE if no token was executed yet.
         if (!$oneLive) {
             foreach ($default as $outToken) {
-                $outToken->setStatePermanently(TokenState::LIVE);
+                if ($isXOR && $oneLive) $newState = TokenState::DEAD;
+                else $newState = TokenState::LIVE;
+                $oneLive = true;
+                Engine::getLogger()->debug('Set unconditional outgoing token', $outToken->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', $newState);
                 $outToken->setContextPermanently($context);
-                Engine::getLogger()->debug('Set unconditional outgoing token', $outToken->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', $outToken->getState());
+                $outToken->setStatePermanently($newState);
+            }
+        } else {
+            foreach ($default as $outToken) {
+                Engine::getLogger()->debug('Set unconditional outgoing token', $outToken->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', TokenState::DEAD);
+                $outToken->setContextPermanently($context);
+                $outToken->setStatePermanently(TokenState::DEAD);
             }
         }
 
         // Throw incidents.
         foreach ($this->getOutIncidents() as $outIncident) {
-            $outIncident->setStatePermanently(TokenState::LIVE);
+            Engine::getLogger()->debug('Set outgoing event', $outIncident->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', TokenState::LIVE);
             $outIncident->setContextPermanently($context);
-            Engine::getLogger()->debug('Set outgoing event', $outIncident->getPermanentId(), 'of', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId(), 'to', $outIncident->getState());
+            $outIncident->setStatePermanently(TokenState::LIVE);
+
+            $receiver = $outIncident->getReceiver();
+            Engine::getLogger()->debug('Outgoing event', $outIncident->getPermanentId(), 'with', $receiver ? $receiver->getPermanentId() : null, $receiver ? get_class($receiver) : null);
+            if ($receiver) {
+                if ($receiver instanceof CPStartEvent) {
+                    // Create a new process instance
+                    $processModels = CPProcessModel::getPermanentObjectsWhere('elements', $receiver, CPProcessModel::class);
+                    foreach ($processModels as $processModel) {
+                        // Create a new instance of the corresponding process model.
+                        Engine::getLogger()->log('Instantiate', $processModel->getPermanentId(), 'caused by event', $outIncident->getPermanentId(), 'in process instance', $this->getProcessInstance()->getPermanentId());
+                        // Create a copy of the incident in the context of the new instance
+                        $copyIncident = new Incident();
+                        $copyIncident->setState(TokenState::CLEAR);
+                        $copyIncident->setType($outIncident->getType());
+                        $copyIncident->setContext($outIncident->getContext());
+                        $copyIncident->setSender($outIncident->getSender());
+                        $copyIncident->setReceiver($outIncident->getReceiver());
+                        $copyIncident->setProcessInstance($outIncident->getProcessInstance());
+                        SimplePersistence::instance()->startTransaction();
+                        $copyIncident->createPermanentObject();
+                        SimplePersistence::instance()->endTransaction();
+                        Engine::instance()->instantiate($processModel, $copyIncident, $this->getProcessInstance());
+                        $outIncident->setStatePermanently(TokenState::PREVIOUSLY_LIVE);
+                    }
+                } else if ($receiver instanceof CPIntermediateEvent || $receiver instanceof CPEndEvent) {
+                    // Is there a callee?
+                    $callee = $this->searchCallee($this->getProcessInstance(), $receiver);
+                    Engine::getLogger()->log('Inform', array_map(function (ProcessInstance $instance) {
+                        return $instance->getPermanentId();
+                    }, $callee), 'from', $this->getProcessInstance()->getPermanentId(), 'at', $this->getNode()->getPermanentId());
+                    if ($callee) {
+                        // Get the corresponding catch-incident
+                        $catching = Incident::getPermanentObjectsWhereAll([
+                            'processInstance' => array_values($callee),
+                            'receiver' => $receiver
+                        ], Incident::class);
+                        // Set the catching incidents to live
+                        foreach ($catching as $catch) {
+                            Engine::getLogger()->debug('Set external outgoing event', $catch->getPermanentId(), $callee, 'to', TokenState::LIVE);
+                            $catch->setContextPermanently($context);
+                            $catch->setStatePermanently(TokenState::LIVE);
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * Search a fitting callee process instance.
+     * @param ProcessInstance $instance The current process instance.
+     * @param CPIntermediateEvent $recipient The recipient to search.
+     * @param ProcessInstance[] $callee (internal) The collected callee.
+     * @return ProcessInstance[]
+     * @throws NotImplementedException
+     */
+    private function searchCallee(ProcessInstance $instance, CPIntermediateEvent $recipient,
+                                  array &$callee = [], array &$search = []) : array {
+        if (in_array($instance->getPermanentId(), $search)) return $callee;
+        $search[] = $instance->getPermanentId();
+
+        if ($instance->getProcessModel()->contains($recipient)) {
+            $callee[$instance->getPermanentId()] = $instance;
+        }
+        if ($instance->getCallee()) {
+            $this->searchCallee($instance->getCallee(), $recipient, $callee, $search);
+        }
+        foreach ($instance->getInteractions() as $interaction) {
+            $this->searchCallee($interaction, $recipient, $callee, $search);
+        }
+        return $callee;
     }
 
     /**
@@ -305,15 +390,57 @@ class LocalState extends APermanentObject {
     public function execute() : void {
         Engine::getLogger()->log('Execute', $this->getPermanentId(), get_class($this->getNode()), $this->getNode()->getPermanentId());
         // Register the node as previously live to avoid a concurrent execution.
-        $this->setStatePermanently(TokenState::PREVIOUSLY_LIVE);
+        $this->setStatePermanently(TokenState::PENDING);
 
         // Execute it.
         $node = $this->getNode();
         $context = $this->getDeserializedContext();
         $newContext = $node->execute($context);
 
-        // Inform the output tokens (and incidents).
-        $this->setOutputTokens($newContext);
+        if ($newContext instanceof PendingResult) {
+            SimplePersistence::instance()->startTransaction();
+            $newContext->setId($this->getId());
+            $context += $newContext->getDeserializedContext();
+            $newContext->setContext(ContextSerializer::serialize($context));
+            $newContext->createPermanentObject();
+            SimplePersistence::instance()->endTransaction();
+            return;
+        } else {
+            $this->setStatePermanently(TokenState::PREVIOUSLY_LIVE);
+            // Inform the output tokens (and incidents).
+            $this->setOutputTokens($newContext);
+        }
+    }
+
+    /**
+     * Checks if the execution of this local state is terminated.
+     * @return bool
+     * @throws DatabaseError
+     * @throws NotImplementedException
+     * @throws SecurityException
+     * @throws UnserializableObjectException
+     */
+    public function isTerminated() : bool {
+        if ($this->getState() !== TokenState::PENDING) {
+            throw new SecurityException('Try to check termination of non-pending task.');
+        }
+
+        // Check termination.
+        $node = $this->getNode();
+        $pendingResult = PendingResult::getPermanentObject($this->getPermanentId());
+
+        if (!$pendingResult) $context = $this->getDeserializedContext();
+        else $context = $pendingResult->getDeserializedContext();
+
+        $newContext = $node->isTerminated($context);
+        if ($newContext instanceof PendingResult) {
+            return false;
+        } else {
+            $this->setStatePermanently(TokenState::PREVIOUSLY_LIVE);
+            // Inform the output tokens (and incidents).
+            $this->setOutputTokens($newContext);
+            return true;
+        }
     }
 
 }

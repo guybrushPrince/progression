@@ -34,9 +34,11 @@ if (!$processModel) {
 /*var_dump($processModel->getElements());
 var_dump($processModel->getFlows());*/
 
-Engine::instance()->instantiate($processModel);
-//Engine::instance()->start();
-Engine::instance()->executeAll();
+$instance = Engine::instance()->instantiate($processModel);
+//Engine::instance()->executeUntilDone();
+while (Engine::instance()->tick()) {
+    echo $instance->getProcessModel()->asDotGraph(['states' => $instance->getInstanceStates()]);
+}
 
 
 ?>

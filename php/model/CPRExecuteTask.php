@@ -29,10 +29,17 @@ class CPRExecuteTask extends CPTask {
     /**
      * @inheritDoc
      */
-    public function execute(array $context) : array {
+    public function execute(array $context) : array|PendingResult {
 
         throw new NotImplementedException('Please implement the R Execute Task');
 
+        return $context;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isTerminated(array $context) : array|PendingResult {
         return $context;
     }
 }

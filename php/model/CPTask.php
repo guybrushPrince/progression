@@ -19,9 +19,16 @@ abstract class CPTask extends CPNode {
     /**
      * Executes this task in the given context (and extends the context when results are available).
      * @param array $context The context as key-value-pairs.
-     * @return array
+     * @return array|PendingResult
      */
-    abstract public function execute(array $context) : array;
+    abstract public function execute(array $context) : array|PendingResult;
+
+    /**
+     * Checks if a pending task is terminated and if so, then it starts the finishing of the execution.
+     * @param array $context The context as key-value-pairs.
+     * @return array|PendingResult
+     */
+    abstract public function isTerminated(array $context) : array|PendingResult;
 
 }
 ?>

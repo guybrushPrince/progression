@@ -40,6 +40,21 @@ class ProcessInstance extends APermanentObject {
     protected CPProcessModel|Closure|null $processModel;
 
     /**
+     * A process instance that called (instantiated) this process instance.
+     * @type ProcessInstance
+     * @nullable
+     * @var ProcessInstance|Closure|null
+     */
+    protected ProcessInstance|Closure|null $callee = null;
+
+    /**
+     * Process instances this process instance interacts with (e.g., has instantiated).
+     * @type [ProcessInstance
+     * @var ProcessInstance[]|Closure
+     */
+    protected array|Closure $interactions = [];
+
+    /**
      * Sets the state of the process instance permanently.
      * @param int $state The new state.
      * @return void
@@ -50,6 +65,15 @@ class ProcessInstance extends APermanentObject {
         $this->setState($state);
         $this->updatePermanentObject();
         SimplePersistence::instance()->endTransaction();
+    }
+
+    /**
+     * Get all related state describing the instance.
+     * @return (Token|LocalState|Incident)[]
+     * @throws NotImplementedException
+     */
+    public function getInstanceStates() : array {
+        return LocalState::getPermanentObjectsWhere('processInstance', $this, LocalState::class);
     }
 
 }

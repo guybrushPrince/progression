@@ -74,6 +74,17 @@ class EchoLogger extends CPLogger {
     }
 
     /**
+     * @inheritDoc
+     */
+    public function error(...$messages) : void {
+        if ($this->logLevel <= self::LEVEL_ERROR) {
+            array_unshift($messages, self::LEVEL_ERROR);
+            $log = call_user_func_array([$this, 'printIt'], $messages);
+            echo $this->name . ' ERROR: ' . $log . PHP_EOL;
+        }
+    }
+
+    /**
      * Creates a string out of the messages.
      * @param mixed ...$messages The messages.
      * @return string

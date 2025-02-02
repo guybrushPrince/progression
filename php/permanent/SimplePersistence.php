@@ -3,7 +3,48 @@
 include_once __DIR__ . '/../engine/exceptions/NotImplementedException.php';
 include_once __DIR__ . '/APersistence.php';
 
-if (class_exists('Persistence')) {
+if (!class_exists('Persistence')) {
+    if (!class_exists('SimplePersistence')) {
+        /**
+         * Class SimplePersistence.
+         *
+         * A default error-throwing implementation. TODO: You have to add an ordinary implementation.
+         *
+         * @package progression
+         * @subpackge php/permanent
+         *
+         * @version 1.0.0
+         * @author Dr. Dipl.-Inf. Thomas M. Prinz
+         */
+        class SimplePersistence extends APersistence {
+
+            /**
+             * @inheritDoc
+             * @throws NotImplementedException
+             */
+            public static function instance() : APersistence {
+                throw new NotImplementedException('Please implement the *instance* method.');
+            }
+
+            /**
+             * @inheritDoc
+             * @throws NotImplementedException
+             */
+            public function startTransaction() : bool {
+                throw new NotImplementedException('Please implement the *startTransaction* method.');
+            }
+
+            /**
+             * @inheritDoc
+             * @throws NotImplementedException
+             */
+            public function endTransaction() : bool {
+                throw new NotImplementedException('Please implement the *endTransaction* method.');
+            }
+        }
+    }
+} else {
+
     /**
      * Class SimplePersistence.
      *
@@ -54,46 +95,6 @@ if (class_exists('Persistence')) {
          */
         public function endTransaction() : bool {
             return $this->persistence->endTransaction();
-        }
-    }
-} else {
-    if (!class_exists('SimplePersistence')) {
-        /**
-         * Class SimplePersistence.
-         *
-         * A default error-throwing implementation. TODO: You have to add an ordinary implementation.
-         *
-         * @package progression
-         * @subpackge php/permanent
-         *
-         * @version 1.0.0
-         * @author Dr. Dipl.-Inf. Thomas M. Prinz
-         */
-        class SimplePersistence extends APersistence {
-
-            /**
-             * @inheritDoc
-             * @throws NotImplementedException
-             */
-            public static function instance() : APersistence {
-                throw new NotImplementedException('Please implement the *instance* method.');
-            }
-
-            /**
-             * @inheritDoc
-             * @throws NotImplementedException
-             */
-            public function startTransaction() : bool {
-                throw new NotImplementedException('Please implement the *startTransaction* method.');
-            }
-
-            /**
-             * @inheritDoc
-             * @throws NotImplementedException
-             */
-            public function endTransaction() : bool {
-                throw new NotImplementedException('Please implement the *endTransaction* method.');
-            }
         }
     }
 }

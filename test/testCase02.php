@@ -3,7 +3,7 @@
 include_once __DIR__ . '/../../cliff/php/Persistence.php';
 include_once __DIR__ . '/../php/permanent/SimplePersistence.php';
 
-Engine::instance(null, CPLogger::LEVEL_DEBUG);
+Engine::instance(null, CPLogger::LEVEL_INFO);
 
 foreach (Token::getAll() as $token) $token->delete();
 foreach (Incident::getAll() as $incident) $incident->delete();
@@ -38,15 +38,13 @@ if (!$processModel) {
     $processModel = CPProcessModel::getPermanentObject('testCase02', 'CPProcessModel');
 }
 
-echo $processModel->asDotGraph();
-
 /*var_dump($processModel->getElements());
 var_dump($processModel->getFlows());*/
 
-Engine::instance()->instantiate($processModel);
-//Engine::instance()->start();
-Engine::instance()->executeAll();
-Engine::instance()->executeAll();
-
+$instance = Engine::instance()->instantiate($processModel);
+//Engine::instance()->executeUntilDone();
+while (Engine::instance()->tick()) {
+    echo $instance->getProcessModel()->asDotGraph(['states' => $instance->getInstanceStates()]);
+}
 
 ?>

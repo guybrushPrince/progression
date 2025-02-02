@@ -14,6 +14,9 @@ abstract class CPLogger {
     const LEVEL_ALL   = 1;
     const LEVEL_DEBUG = 2;
     const LEVEL_INFO  = 3;
+    const LEVEL_ERROR = 4;
+
+    const LEVEL_NONE  = 666;
 
     /**
      * Get or create an instance of the logger.
@@ -36,6 +39,13 @@ abstract class CPLogger {
      * @return void
      */
     public abstract function debug(...$messages) : void;
+
+    /**
+     * Print error information.
+     * @param mixed ...$messages The messages to show as error.
+     * @return void
+     */
+    public abstract function error(...$messages) : void;
 
     /**
      * Provides the slugged version of a string.

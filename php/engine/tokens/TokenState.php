@@ -10,11 +10,12 @@
  */
 class TokenState {
 
-    const CLEAR           = 1;
-    const LIVE            = 2;
-    const DEAD            = 3;
-    const PREVIOUSLY_LIVE = 4;
-    const PREVIOUSLY_DEAD = 5;
+    const CLEAR           =   1;
+    const LIVE            =   2;
+    const DEAD            =   3;
+    const PREVIOUSLY_LIVE =   4;
+    const PREVIOUSLY_DEAD =   5;
+    const PENDING         = 100; // A pending local state. Warning: Only for local states!
 
 }
 ?>

@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * Trait Contextable.
+ *
+ * @package progression
+ * @subpackge php/engine/serialize
+ *
+ * @version 1.0.0
+ * @author Dr. Dipl.-Inf. Thomas M. Prinz
+ */
 trait Contextable {
 
     /**

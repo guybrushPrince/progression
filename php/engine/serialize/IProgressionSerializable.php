@@ -49,8 +49,19 @@ interface IProgressionSerializable {
      * @param string $field The property.
      * @param mixed $value The value.
      * @param string $class The class of the object.
+     * @param int|null $limit The maximal number of results.
      * @return IProgressionSerializable[]
      */
-    public static function getPermanentObjectsWhere(string $field, mixed $value, string $class) : array;
+    public static function getPermanentObjectsWhere(string $field, mixed $value, string $class,
+                                                    ?int $limit = null) : array;
+
+    /**
+     * A standard interface to get all objects with the given properties.
+     * @param array $map The key-value mapping.
+     * @param string $class The class of the object.
+     * @param int|null $limit The maximal number of results.
+     * @return IProgressionSerializable[]
+     */
+    public static function getPermanentObjectsWhereAll(array $map, string $class, ?int $limit = null) : array;
 }
 ?>

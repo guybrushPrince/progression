@@ -24,5 +24,12 @@ class CPVirtualTask extends CPTask {
         // It does nothing
         return $context;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function isTerminated(array $context): array|PendingResult {
+        return $context;
+    }
 }
 ?>

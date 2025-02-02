@@ -109,10 +109,11 @@ abstract class KindOfToken extends APermanentObject {
         $this->updatePermanentObject();
         SimplePersistence::instance()->endTransaction();
 
-        // We have to inform the engine
+        // We have to inform local states
         if ($state === TokenState::LIVE || $state === TokenState::DEAD) {
-            if ($this instanceof Token) Engine::instance()->registerToken($this);
-            else Engine::instance()->registerIncident($this);
+            if ($this instanceof Token) $localStates = LocalState::getPermanentObjectsWhere('inTokens', $this, LocalState::class);
+            else $localStates = LocalState::getPermanentObjectsWhere('inIncidents', $this, LocalState::class);;
+            foreach ($localStates as $localState) $localState->inform();
         }
     }
 

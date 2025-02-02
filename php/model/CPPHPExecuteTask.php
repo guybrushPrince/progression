@@ -31,7 +31,7 @@ class CPPHPExecuteTask extends CPExecuteTask {
     /**
      * @inheritDoc
      */
-    public function execute(array $context) : array {
+    public function execute(array $context) : array|PendingResult {
         $code = implode(PHP_EOL, array_map(function (string $key) {
             return '$' . str_replace(' ', '_', $key) . ' = $context["' . $key . '"];';
         }, array_keys($context))) . PHP_EOL;
@@ -42,6 +42,14 @@ class CPPHPExecuteTask extends CPExecuteTask {
 
         eval($code);
 
+        return $context;
+    }
+
+    /**
+     * Since a PHP script is executed as is, there is no pending result.
+     * @inheritDoc
+     */
+    public function isTerminated(array $context) : array|PendingResult {
         return $context;
     }
 }

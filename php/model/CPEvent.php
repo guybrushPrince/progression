@@ -17,6 +17,8 @@
  */
 abstract class CPEvent extends CPNode {
 
+    use CPEventPersistentTrait;
+
     /**
      * The direction of the event.
      * @type int

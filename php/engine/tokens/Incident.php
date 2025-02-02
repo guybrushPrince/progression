@@ -24,10 +24,11 @@ class Incident extends KindOfToken {
 
     /**
      * A recipient of this incident.
-     * @type [ProcessInstance
-     * @var ProcessInstance[]|Closure
+     * @type ProcessInstance
+     * @nullable
+     * @var ProcessInstance|Closure|null
      */
-    protected array|Closure $recipients = [];
+    protected ProcessInstance|Closure|null $recipient = null;
 
     /**
      * The sender of the event.
@@ -36,6 +37,14 @@ class Incident extends KindOfToken {
      * @crucial
      */
     protected CPEvent|Closure|null $sender = null;
+
+    /**
+     * The receiver of the event.
+     * @type CPEvent
+     * @var CPEvent|Closure|null
+     * @crucial
+     */
+    protected CPEvent|Closure|null $receiver = null;
 
 }
 ?>

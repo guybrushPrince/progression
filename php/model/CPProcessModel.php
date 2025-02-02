@@ -86,9 +86,36 @@ class CPProcessModel extends CPModel implements Graph {
      * @inheritDoc
      */
     public function asDotGraph(array $properties = []) : string {
+        if (array_key_exists('states', $properties)) {
+            $states = $properties['states'];
+            $statesTmp = array_reduce($states, function (array $states, Token|Incident|LocalState $state) {
+                if ($state instanceof LocalState) {
+                    $states[$state->getNode()->getPermanentId()] = $state;
+                    // Its in-tokens and in-incidents are known
+                    foreach (array_merge($state->getInTokens(), $state->getInIncidents()) as $token) {
+                        if (!array_key_exists($token->getPermanentId(), $states)) {
+                            $states[$token->getPermanentId()] = ['to' => $state->getNode()->getPermanentId(), 'object' => $token];
+                        } else $states[$token->getPermanentId()]['to'] = $state->getNode()->getPermanentId();
+                    }
+                    // Its out-tokens and out-incidents are known
+                    foreach (array_merge($state->getOutTokens(), $state->getOutIncidents()) as $token) {
+                        if (!array_key_exists($token->getPermanentId(), $states)) {
+                            $states[$token->getPermanentId()] = ['from' => $state->getNode()->getPermanentId(), 'object' => $token];
+                        } else $states[$token->getPermanentId()]['from'] = $state->getNode()->getPermanentId();
+                    }
+                }
+                return $states;
+            }, []);
+            $states = [];
+            foreach ($statesTmp as $key => $state) {
+                if (is_array($state) && array_key_exists('from', $state) && array_key_exists('to', $state)) {
+                    $states[$state['from'] . '-' . $state['to']] = $state['object'];
+                } else $states[$key] = $state;
+            }
+        } else $states = [];
         $graph = 'digraph ' . CPLogger::slug($this->getPermanentId()) . ' {' . PHP_EOL;
         foreach ($this->getElements() as $element) {
-            $graph .= 'n' . CPLogger::slug($element->getPermanentId()) . '[label="' . $element->getPermanentId() . '",shape="' .
+            $graph .= 'n' . CPLogger::slug($element->getPermanentId()) . '[label="' . $element->getPermanentId() . '" fixedsize="true" width="1" shape="' .
                 [
                     CPPHPExecuteTask::class => 'box',
                     CPRExecuteTask::class => 'box',
@@ -101,13 +128,40 @@ class CPProcessModel extends CPModel implements Graph {
                     CPXORGateway::class => 'diamond',
                     CPORGateway::class => 'diamond',
                     CPGateway::class => 'diamond'
-                ][get_class($element)] . '"]' . PHP_EOL;
+                ][get_class($element)] . '"';
+            if (array_key_exists($element->getPermanentId(), $states)) {
+                $localState = $states[$element->getPermanentId()];
+                $graph .= ' color="' . $this->getColor($localState->getState()) . '"';
+            }
+            $graph .= ']' . PHP_EOL;
         }
         foreach ($this->getFlows() as $flow) {
-            $graph .= 'n' . CPLogger::slug($flow->getSource()->getPermanentId()) . ' -> n' . CPLogger::slug($flow->getTarget()->getPermanentId()) . '' . PHP_EOL;
+            $id = $flow->getSource()->getPermanentId() . '-' . $flow->getTarget()->getPermanentId();
+            if (array_key_exists($id, $states)) {
+                $color = 'color="' . $this->getColor($states[$id]->getState()) . '"';
+            } else $color = '';
+            if ($flow->getCondition()) {
+                $condition = ' label="' . $flow->getUseCondition()->getCondition() . '"';
+            } else $condition = '';
+            $graph .= 'n' . CPLogger::slug($flow->getSource()->getPermanentId()) . ' -> n' . CPLogger::slug($flow->getTarget()->getPermanentId()) . '[' . $color . $condition . ']' . PHP_EOL;
         }
         $graph .= '}' . PHP_EOL;
         return $graph;
+    }
+
+    /**
+     * @param int $state
+     * @return string
+     */
+    private function getColor(int $state) : string {
+        return [
+            TokenState::CLEAR => 'floralwhite',
+            TokenState::LIVE => 'darkolivegreen1',
+            TokenState::DEAD => 'firebrick1',
+            TokenState::PREVIOUSLY_LIVE => 'forestgreen',
+            TokenState::PREVIOUSLY_DEAD => 'firebrick4',
+            TokenState::PENDING => 'gold'
+        ][$state];
     }
 
     /**

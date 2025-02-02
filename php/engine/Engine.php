@@ -25,18 +25,6 @@ class Engine {
     private static ?CPLogger $logger = null;
 
     /**
-     * The tokens in the current context.
-     * @var Token[]
-     */
-    private array $tokens = [];
-
-    /**
-     * The incidents in the current context.
-     * @var Incident[]
-     */
-    private array $incidents = [];
-
-    /**
      * Executable local states.
      * @var LocalState[]
      */
@@ -65,132 +53,22 @@ class Engine {
     }
 
     /**
-     * Start the engine with tokens in a live or dead state.
-     * @return void
-     * @throws NotImplementedException
-     */
-    public function start() : void {
-        $this->refresh();
-        self::getLogger()->debug($this->tokens);
-        self::getLogger()->debug($this->incidents);
-    }
-
-    /**
-     * Refreshs the entire engine state.
-     * @return void
-     * @throws NotImplementedException
-     */
-    private function refresh() : void {
-        $this->tokens = Token::getPermanentObjectsWhere('state', [ TokenState::DEAD, TokenState::LIVE ], Token::class);
-        $this->incidents = Incident::getPermanentObjectsWhere('state', [ TokenState::DEAD, TokenState::LIVE ], Incident::class);
-        $this->executable = LocalState::getPermanentObjectsWhere('state', TokenState::LIVE, LocalState::class);
-    }
-
-    /**
-     * Registers a token at the engine / bus.
-     * @param Token $token The token to register.
-     * @return void
-     * @throws NotImplementedException
-     */
-    public function registerToken(Token $token) : void {
-        $this->tokens[$token->getPermanentId()] = $token;
-        Engine::getLogger()->debug(get_class($this), 'Registered token', $token->getPermanentId(), $token->getState());
-    }
-
-    /**
-     * Registers an incident at the engine / bus.
-     * @param Incident $incident The incident to register.
-     * @return void
-     * @throws NotImplementedException
-     */
-    public function registerIncident(Incident $incident) : void {
-        $this->incidents[$incident->getPermanentId()] = $incident;
-        Engine::getLogger()->debug(get_class($this), 'Registered event', $incident->getPermanentId(), $incident->getState());
-    }
-
-    /**
-     * Inform the local states about the token change.
-     * @return void
-     * @throws NotImplementedException
-     */
-    public function informLocalStates() : void {
-        Engine::getLogger()->debug(get_class($this), 'Inform local states');
-        $this->tokens = $this->filterDeadTokens($this->tokens);
-        Engine::getLogger()->debug(get_class($this), 'Available tokens', count($this->tokens));
-        $copy = $this->tokens + [];
-        $this->tokens = [];
-        while (count($copy) >= 1) {
-            $token = array_shift($copy);
-            $localStates = LocalState::getPermanentObjectsWhere('inTokens', $token, LocalState::class);
-            Engine::getLogger()->debug(get_class($this), 'Inform', $token->getKey(), $token->getState(), count($localStates));
-            foreach ($localStates as $localState) $localState->inform();
-            $copy = $this->filterDeadTokens($copy);
-        }
-
-        $this->incidents = $this->filterDeadIncidents($this->incidents);
-        Engine::getLogger()->debug(get_class($this), 'Available events', count($this->incidents));
-        $copy = $this->incidents + [];
-        $this->incidents = [];
-        while (count($copy) >= 1) {
-            $incident = array_shift($copy);
-            $localStates = LocalState::getPermanentObjectsWhere('inIncidents', $incident, LocalState::class);
-            foreach ($localStates as $localState) $localState->inform();
-            $copy = $this->filterDeadIncidents($copy);
-        }
-    }
-
-    /**
-     * Filters all "dead" tokens.
-     * @param Token[] $tokens A set of tokens to filter.
-     * @return Token[]
-     */
-    private function filterDeadTokens(array $tokens) : array {
-        return array_filter($tokens, function (Token $token) {
-            return $token->getState() === TokenState::LIVE || $token->getState() === TokenState::DEAD;
-        });
-    }
-
-    /**
-     * Filters all "dead" incidents.
-     * @param Incident[] $incidents A set of incidents to filter.
-     * @return Incident[]
-     */
-    private function filterDeadIncidents(array $incidents) : array {
-        return array_filter($incidents, function (Incident $incident) {
-            return $incident->getState() === TokenState::LIVE || $incident->getState() === TokenState::DEAD;
-        });
-    }
-
-    /**
-     * Register executable states.
-     * @param LocalState $localState The executable state.
-     * @return void
-     * @throws NotImplementedException
-     */
-    public function registerExecutable(LocalState $localState) : void {
-        $this->executable[$localState->getPermanentId()] = $localState;
-        Engine::getLogger()->debug(get_class($this), 'Registered executable', $localState->getPermanentId(), get_class($localState->getNode()), $localState->getNode()->getPermanentId());
-    }
-
-    /**
-     * Execute a local state (if available).
+     * Performs a single tick of the engine, which executes a single (live and "physical") local state.
      * @return bool
-     * @throws Exception
+     * @throws NotImplementedException
      */
-    public function executeOne() : bool {
-        Engine::getLogger()->debug(get_class($this), 'Execute next');
-        if (count($this->executable) === 0 && (count($this->tokens) >= 1 || count($this->incidents) >= 1)) {
-            $this->informLocalStates();
+    public function tick() : bool {
+        self::$logger->log('Tick', time());
+
+        $localStates = LocalState::getPermanentObjectsWhere('state', TokenState::PENDING, LocalState::class);
+        foreach ($localStates as $localState) {
+            $localState->isTerminated();
         }
-        if (count($this->executable) >= 1) {
-            $localState = array_shift($this->executable);
-            try {
-                $localState->execute();
-            } catch (DatabaseError $e) {
-            } catch (NotImplementedException $e) {
-            } catch (SecurityException $e) {
-            } catch (UnserializableObjectException $e) {
-            }
+
+        $localStates = LocalState::getPermanentObjectsWhere('state', TokenState::LIVE, LocalState::class, 1);
+        if ($localStates) {
+            $localState = array_shift($localStates);
+            $localState->execute();
             return true;
         }
         return false;
@@ -199,12 +77,10 @@ class Engine {
     /**
      * Execute all.
      * @return bool
-     * @throws DatabaseError
+     * @throws NotImplementedException
      */
-    public function executeAll() : bool {
-        while ($this->executeOne()) {
-
-        }
+    public function executeUntilDone() : bool {
+        while ($this->tick());
         return true;
     }
 
@@ -212,35 +88,56 @@ class Engine {
      * Create a new instance of the given process model.
      * @param CPProcessModel $processModel The process model.
      * @param Incident|null $incident (Optional) incident if given.
-     * @return void
+     * @param ProcessInstance|null $callee The callee process instance.
+     * @return ProcessInstance
+     * @throws DatabaseError
      * @throws NotImplementedException
      * @throws SecurityException
-     * @throws DatabaseError
      */
-    public function instantiate(CPProcessModel $processModel, ?Incident $incident = null) : void {
+    public function instantiate(CPProcessModel $processModel, ?Incident $incident = null,
+                                ?ProcessInstance $callee = null) : ProcessInstance {
 
-        self::getLogger()->log('Instantiate', $processModel->getKey(), 'with', $incident);
+        self::getLogger()->log('Instantiate', $processModel->getKey(), 'with', $incident ? [$incident->getPermanentId(), $incident->getDeserializedContext()] : null);
 
         // Generate a new process instance.
         $instance = new ProcessInstance();
         $instance->setProcessModel($processModel);
+        if ($callee) $instance->setCallee($callee);
         SimplePersistence::instance()->startTransaction();
         $instance->createPermanentObject();
         SimplePersistence::instance()->endTransaction();
+
+        // Set this instance as interaction of the callee
+        if ($callee) {
+            $callee->addInteraction($instance);
+            SimplePersistence::instance()->startTransaction();
+            $callee->updatePermanentObject();
+            SimplePersistence::instance()->endTransaction();
+        }
 
         $flowTokens = [];
         $eventIncidents = [];
         $startEvents = [];
         if ($incident) {
-            $sender = $incident->getSender();
-            array_filter($sender->getEventRecipients(), function (CPEvent $model) use ($processModel, &$eventIncidents, $incident) {
-                $within = $processModel->contains($model);
-                if ($within) {
-                    $eventIncidents[$model->getPermanentId()] = $incident;
-                    self::getLogger()->debug('Registered', $incident, 'with', $model);
-                }
-                return $within;
-            });
+            if ($incident->getReceiver()) {
+                $receiver = $incident->getReceiver();
+                $eventIncidents[$receiver->getPermanentId()] = [ $incident ];
+                self::getLogger()->log('Registered', $incident->getPermanentId(), 'with', $receiver->getPermanentId(), 'and', $incident->getDeserializedContext());
+            } else {
+                $sender = $incident->getSender();
+                array_filter($sender->getEventRecipients(), function (CPEvent $model) use ($processModel, &$eventIncidents, $incident) {
+                    $within = $processModel->contains($model);
+                    if ($within) {
+                        $incident->setReceiver($model);
+                        SimplePersistence::instance()->startTransaction();
+                        $incident->updatePermanentObject();
+                        SimplePersistence::instance()->endTransaction();
+                        $eventIncidents[$model->getPermanentId()] = [ $incident ];
+                        self::getLogger()->log('Registered', $incident->getPermanentId(), 'with', $model->getPermanentId(), 'and', $incident->getDeserializedContext());
+                    }
+                    return $within;
+                });
+            }
         }
 
         // Create the tokens, incidents, and the local states.
@@ -262,15 +159,15 @@ class Engine {
             $localState->setNode($node);
             $localState->setProcessInstance($instance);
             self::getLogger()->debug('Created local state for', get_class($node), $node->getKey(), ' with ', count($incomingTokens), count($outgoingTokens));
-            if ($node instanceof CPStartEvent) $startEvents[$node->getId()] = $localState;
+            if ($node instanceof CPStartEvent) $startEvents[$node->getPermanentId()] = $localState;
 
             // Create incoming or outgoing events / incidents.
             if ($node instanceof CPEvent) {
-                $incident = $this->getOrCreateIncident($node, $eventIncidents, $instance);
+                $incidents = $this->getOrCreateIncident($node, $eventIncidents, $instance);
                 if ($node->getDirection() === CPEventDirection::CATCHING) {
-                    $localState->setInIncidents([ $incident ]);
+                    $localState->setInIncidents($incidents);
                 } else {
-                    $localState->setOutIncidents([ $incident ]);
+                    $localState->setOutIncidents($incidents);
                 }
             }
 
@@ -289,9 +186,13 @@ class Engine {
         }
 
         if ($incident) {
-            $posStartEvents = array_filter($startEvents, function (LocalState $startEventState) use ($incident) {
-                return $startEventState->getNode()->getType() === $incident->getType();
-            });
+            if ($incident->getReceiver()) {
+                $posStartEvents = [ $startEvents[$incident->getReceiver()->getPermanentId()] ];
+            } else {
+                $posStartEvents = array_filter($startEvents, function (LocalState $startEventState) use ($incident) {
+                    return $startEventState->getNode()->getType() === $incident->getType();
+                });
+            }
         } else $posStartEvents = $startEvents;
 
         if (count($posStartEvents) === 0) {
@@ -304,17 +205,17 @@ class Engine {
 
         $startEventState = array_shift($posStartEvents);
 
-        if ($startEventState instanceof LocalState) {
-            foreach ($startEventState->getInIncidents() as $inIncident) {
-                $inIncident->setStatePermanently(TokenState::LIVE);
-                self::getLogger()->log('Set', get_class($inIncident), $inIncident->getPermanentId(), 'of state of', get_class($startEventState->getNode()), $startEventState->getNode()->getPermanentId(), 'to', TokenState::LIVE);
-            }
-        }
-
         // Set process instance running
         $instance->setStatePermanently(ProcessState::RUNNING);
 
-        $startEventState->inform();
+        if ($startEventState instanceof LocalState) {
+            foreach ($startEventState->getInIncidents() as $inIncident) {
+                self::getLogger()->log('Set', get_class($inIncident), $inIncident->getPermanentId(), 'of state of', get_class($startEventState->getNode()), $startEventState->getNode()->getPermanentId(), 'to', TokenState::LIVE);
+                $inIncident->setStatePermanently(TokenState::LIVE);
+            }
+        }
+
+        return $instance;
     }
 
     /**
@@ -352,22 +253,73 @@ class Engine {
     /**
      * Get an already created incident or create a new one.
      * @param CPEvent $event The event.
-     * @param Incident[] $eventIncidents The created incidents (indexed by the event id).
+     * @param Incident[][] $eventIncidents The created incidents (indexed by the event id).
      * @param ProcessInstance $instance The process instance.
+     * @return Incident[]
+     * @throws NotImplementedException
+     */
+    private function getOrCreateIncident(CPEvent $event, array &$eventIncidents, ProcessInstance $instance) : array {
+        if (!array_key_exists($event->getPermanentId(), $eventIncidents)) {
+            $eventIncidents[$event->getPermanentId()] = [];
+            foreach ($event->getEventRecipients() as $recipient) {
+                if (!array_key_exists($recipient->getPermanentId(), $eventIncidents[$event->getPermanentId()])) {
+                    if ($event->getDirection() !== CPEventDirection::CATCHING) {
+                        $incident = $this->createIncident($instance, $event->getType(), $event, $recipient);
+                    } else {
+                        $incident = $this->createIncident($instance, $event->getType(), $recipient, $event);
+                    }
+                    $eventIncidents[$event->getPermanentId()][$recipient->getPermanentId()] = $incident;
+                }
+            }
+            foreach ($event->getProcessRecipients() as $recipient) {
+                $starts = $recipient->determineStartNodes();
+                $starts = array_filter($starts, function (CPStartEvent $start) use ($event) {
+                    return $start->getType() === $event->getType();
+                });
+                foreach ($starts as $start) {
+                    if (!array_key_exists($start->getPermanentId(), $eventIncidents[$event->getPermanentId()])) {
+                        if ($event->getDirection() !== CPEventDirection::CATCHING) {
+                            $incident = $this->createIncident($instance, $event->getType(), $event, $start);
+                        } else {
+                            $incident = $this->createIncident($instance, $event->getType(), $start, $event);
+                        }
+                        $eventIncidents[$event->getPermanentId()][$start->getPermanentId()] = $incident;
+                    }
+                }
+            }
+            if (count($eventIncidents[$event->getPermanentId()]) === 0) {
+                // There are no corresponding recipients. Create a stub incident.
+                if ($event->getDirection() !== CPEventDirection::CATCHING) {
+                    $incident = $this->createIncident($instance, $event->getType(), $event, null);
+                } else {
+                    $incident = $this->createIncident($instance, $event->getType(), null, $event);
+                }
+                $eventIncidents[$event->getPermanentId()][] = $incident;
+            }
+        }
+        return $eventIncidents[$event->getPermanentId()];
+    }
+
+    /**
+     * Create an incident.
+     * @param ProcessInstance $instance The instance.
+     * @param int $type The event type.
+     * @param CPEvent|null $sender The sender.
+     * @param CPEvent|null $receiver The receiver.
      * @return Incident
      * @throws NotImplementedException
      */
-    private function getOrCreateIncident(CPEvent $event, array &$eventIncidents, ProcessInstance $instance) : Incident {
-        if (!array_key_exists($event->getId(), $eventIncidents)) {
-            $incident = new Incident();
-            $incident->setState(TokenState::CLEAR);
-            $incident->setProcessInstance($instance);
-            $incident->setType($event->getType());
+    private function createIncident(ProcessInstance $instance, int $type, ?CPEvent $sender,
+                                    ?CPEvent $receiver) : Incident {
+        $incident = new Incident();
+        $incident->setState(TokenState::CLEAR);
+        $incident->setProcessInstance($instance);
+        $incident->setType($type);
 
-            $eventIncidents[$event->getId()] = $incident;
-            $incident->createPermanentObject();
-        }
-        return $eventIncidents[$event->getId()];
+        if ($sender) $incident->setSender($sender);
+        if ($receiver) $incident->setReceiver($receiver);
+        $incident->createPermanentObject();
+        return $incident;
     }
 
 
