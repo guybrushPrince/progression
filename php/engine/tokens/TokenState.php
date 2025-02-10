@@ -17,5 +17,7 @@ class TokenState {
     const PREVIOUSLY_DEAD =   5;
     const PENDING         = 100; // A pending local state. Warning: Only for local states!
 
+    const CANCELED        = 666;
+
 }
 ?>

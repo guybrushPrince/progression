@@ -49,10 +49,15 @@ abstract class CPEvent extends CPNode {
 
     /**
      * Constructor.
+     * @param string|null $id The id of the event if available.
      * @param int $direction Sets the direction.
      * @param int $type Sets the type.
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
      */
-    public function __construct(int $direction = CPEventDirection::NONE, int $type = CPEventType::NONE) {
+    public function __construct(?string $id = null, int $direction = CPEventDirection::NONE,
+                                int $type = CPEventType::NONE, ?array $relatedUI = null) {
+        parent::__construct($id, $relatedUI);
         $this->direction = $direction;
         $this->type = $type;
     }

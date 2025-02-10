@@ -17,7 +17,7 @@
 abstract class CPExecuteTask extends CPTask {
 
     /**
-     * The PHP code to execute.
+     * The code to execute.
      * @type string
      * @length MEDIUM
      * @var string

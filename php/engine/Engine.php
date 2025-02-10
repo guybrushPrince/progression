@@ -1,5 +1,8 @@
 <?php
 
+include_once __DIR__ . '/../context/SimpleContextBuilder.php';
+SimpleContextBuilder::loadContext();
+
 /**
  * Class Engine.
  * The main class of the execution engine.
@@ -62,16 +65,22 @@ class Engine {
 
         $localStates = LocalState::getPermanentObjectsWhere('state', TokenState::PENDING, LocalState::class);
         foreach ($localStates as $localState) {
-            $localState->isTerminated();
+            $user = $localState->getUser() ?: AAuthentication::SYSTEM_USER;
+            $group = $localState->getGroup() ?: AAuthentication::SYSTEM_GROUP;
+            if (SimpleAuthentication::login($user, $group)) {
+                $localState->isTerminated();
+            }
         }
 
-        $localStates = LocalState::getPermanentObjectsWhere('state', TokenState::LIVE, LocalState::class, 1);
-        if ($localStates) {
-            $localState = array_shift($localStates);
-            $localState->execute();
-            return true;
+        $localStates = LocalState::getPermanentObjectsWhere('state', TokenState::LIVE, LocalState::class);
+        foreach ($localStates as $localState) {
+            $user = $localState->getUser() ?: AAuthentication::SYSTEM_USER;
+            $group = $localState->getGroup() ?: AAuthentication::SYSTEM_GROUP;
+            if (SimpleAuthentication::login($user, $group)) {
+                $localState->execute();
+            }
         }
-        return false;
+        return count($localStates) > 0;
     }
 
     /**
@@ -85,24 +94,41 @@ class Engine {
     }
 
     /**
+     * Get all process models (currently, a simple implementation).
+     * @return CPProcessModel[]
+     * @throws NotImplementedException
+     */
+    public function getProcessModels() : array {
+        return CPProcessModel::getAllPermanentObjects(CPProcessModel::class);
+    }
+
+    /**
      * Create a new instance of the given process model.
      * @param CPProcessModel $processModel The process model.
      * @param Incident|null $incident (Optional) incident if given.
      * @param ProcessInstance|null $callee The callee process instance.
+     * @param string|null $user The user, who executes the process instance.
+     * @param string|null $group The group the user belongs to.
      * @return ProcessInstance
      * @throws DatabaseError
      * @throws NotImplementedException
      * @throws SecurityException
      */
     public function instantiate(CPProcessModel $processModel, ?Incident $incident = null,
-                                ?ProcessInstance $callee = null) : ProcessInstance {
+                                ?ProcessInstance $callee = null, ?string $user = null,
+                                ?string $group = null) : ProcessInstance {
 
-        self::getLogger()->log('Instantiate', $processModel->getKey(), 'with', $incident ? [$incident->getPermanentId(), $incident->getDeserializedContext()] : null);
+        self::getLogger()->log('Instantiate', $processModel->getKey(), 'with', $incident ? [$incident->getPermanentId(), $incident->getDeserializedContext()] : null, 'by', $user, 'in', $group);
+
+        if (!$user) $user = AAuthentication::SYSTEM_USER;
+        if (!$group) $group = AAuthentication::SYSTEM_GROUP;
 
         // Generate a new process instance.
         $instance = new ProcessInstance();
         $instance->setProcessModel($processModel);
         if ($callee) $instance->setCallee($callee);
+        $instance->setUser($user);
+        $instance->setGroup($group);
         SimplePersistence::instance()->startTransaction();
         $instance->createPermanentObject();
         SimplePersistence::instance()->endTransaction();
@@ -142,7 +168,8 @@ class Engine {
 
         // Create the tokens, incidents, and the local states.
         SimplePersistence::instance()->startTransaction();
-        array_map(function (CPNode $node) use (&$flowTokens, $instance, &$startEvents, &$eventIncidents) : LocalState {
+        array_map(function (CPNode $node) use (&$flowTokens, $instance, &$startEvents, &$eventIncidents,
+            $user, $group) : LocalState {
             // Create incoming tokens
             $incomingTokens = array_map(function(CPFlow $flow) use (&$flowTokens, $instance) : Token {
                 return $this->getOrCreateToken($flow, $flowTokens, $instance);
@@ -154,6 +181,8 @@ class Engine {
 
             // Create a new local state.
             $localState = new LocalState();
+            $localState->setUser($user);
+            $localState->setGroup($group);
             $localState->setInTokens($incomingTokens);
             $localState->setOutTokens($outgoingTokens);
             $localState->setNode($node);
@@ -219,6 +248,18 @@ class Engine {
     }
 
     /**
+     * Get all process instances.
+     * @param int[]|null $states An optional array of states to filter on {@link ProcessState}.
+     * @return ProcessInstance[]
+     * @throws NotImplementedException
+     */
+    public function getProcessInstances(?array $states = null) : array {
+        if (is_array($states) && count($states) >= 1) {
+            return ProcessInstance::getPermanentObjectsWhere('state', $states, ProcessInstance::class);
+        } else return ProcessInstance::getAllPermanentObjects(ProcessInstance::class);
+    }
+
+    /**
      * Terminate a process instance.
      * @param ProcessInstance $processInstance The process instance to terminate.
      * @return void
@@ -227,6 +268,51 @@ class Engine {
     public function terminate(ProcessInstance $processInstance) : void {
         // Set the instance to finished
         $processInstance->setStatePermanently(ProcessState::FINISHED);
+    }
+
+    /**
+     * Cancel a process instance.
+     * @param ProcessInstance $processInstance The process instance to cancel.
+     * @return void
+     * @throws DatabaseError
+     * @throws NotImplementedException
+     * @throws SecurityException
+     * @throws UnserializableObjectException
+     */
+    public function cancel(ProcessInstance $processInstance) : void {
+        $states = $processInstance->getInstanceStates();
+        $processInstance->setStatePermanently(ProcessState::CANCELED);
+        foreach ($states as $state) {
+            if ($state->getState() === TokenState::PENDING) {
+                // Inform the nodes
+                $state->cancel();
+            }
+            $state->setStatePermanently(TokenState::CANCELED);
+        }
+    }
+
+    /**
+     * Delete a process instance. A running instance will be canceled first.
+     * @param ProcessInstance $processInstance The process instance to delete.
+     * @return void
+     * @throws DatabaseError
+     * @throws NotImplementedException
+     * @throws SecurityException
+     * @throws UnserializableObjectException
+     */
+    public function delete(ProcessInstance $processInstance) : void {
+        if ($processInstance->getState() === ProcessState::RUNNING) {
+            $this->cancel($processInstance);
+        }
+        $states = $processInstance->getInstanceStates();
+        foreach ($states as $state) {
+            if ($state instanceof LocalState) {
+                $pending = PendingResult::getPermanentObject($state->getPermanentId(), PendingResult::class);
+                if ($pending) $pending->deletePermanentObject();
+            }
+            $state->deletePermanentObject();
+        }
+        $processInstance->deletePermanentObject();
     }
 
     /**
@@ -242,6 +328,7 @@ class Engine {
             $token = new Token();
             $token->setState(TokenState::CLEAR);
             $token->setProcessInstance($instance);
+            $token->setFlow($flow);
             if ($flow->getCondition()) $token->setCondition($flow->getCondition());
 
             $flowTokens[$flow->getId()] = $token;

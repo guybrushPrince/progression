@@ -131,5 +131,25 @@ abstract class CPNode extends CPModel implements GraphNode {
         $this->postset = $postset;
     }
 
+    /**
+     * Prepare the context by e.g. replacing context variables.
+     * @param array $context The deserialized context.
+     * @param array|null $overallContext (Internal) The original context.
+     * @return array
+     */
+    public static function prepareContext(array $context, ?array $overallContext = null) : array {
+        if (!$overallContext) $overallContext = $context;
+        foreach ($context as $field => $value) {
+            if (is_array($value)) {
+                $context[$field] = self::prepareContext($value, $overallContext);
+            } else if ($value instanceof ContextVariable) {
+                if (array_key_exists($value->getName(), $overallContext)) {
+                    $context[$field] = $overallContext[$value->getName()];
+                }
+            }
+        }
+        return $context;
+    }
+
 }
 ?>

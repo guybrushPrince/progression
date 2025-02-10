@@ -24,25 +24,29 @@ class ContextSerializer {
      * @throws UnserializableObjectException
      */
     public static function serialize(array $context) : string {
-        self::serializeObjects($context);
+        $context = self::serializeObjects($context);
         return Tools::jsonEncode($context);
     }
 
     /**
      * Serializes the objects of a given context.
      * @param array $context The context to serialize all objects within.
+     * @return array
      * @throws UnserializableObjectException
      */
-    private static function serializeObjects(array &$context) : void {
+    private static function serializeObjects(array $context) : array {
         foreach ($context as $field => $value) {
             if ($value instanceof IProgressionSerializable) {
                 $context[$field] = self::serializeObject($value);
+            } else if ($value instanceof ContextVariable) {
+                $context[$field] = '{{' . $value->getName() . '}}';
             } else if (is_object($value)) {
                 throw new UnserializableObjectException('Object of class ' . get_class($value) . ' cannot be serialized.');
             } else if (is_array($value)) {
-                self::serializeObjects($value);
+                $context[$field] = self::serializeObjects($value);
             }
         }
+        return $context;
     }
 
     /**
@@ -67,7 +71,7 @@ class ContextSerializer {
         if ($context === null) $context = [];
         else {
             $context = Tools::jsonDecode($context);
-            self::deserializeObjects($context);
+            $context = self::deserializeObjects($context);
         }
         return $context;
     }
@@ -75,30 +79,33 @@ class ContextSerializer {
     /**
      * Deserializes all objects in the context.
      * @param array $context The context.
-     * @return void
+     * @return array
      * @throws Exception
      */
-    private static function deserializeObjects(array &$context) : void {
+    private static function deserializeObjects(array $context) : array {
         foreach ($context as $field => $value) {
             if (is_array($value)) {
                 if (array_key_exists(self::SERIALIZED_ID, $value) &&
                     array_key_exists(self::SERIALIZED_CLASS, $value)) {
                     $context[$field] = self::deserializeObject($value[self::SERIALIZED_ID], $value[self::SERIALIZED_CLASS]);
                 } else {
-                    self::deserializeObjects($context);
+                    $context[$field] = self::deserializeObjects($value);
                 }
+            } else if (is_string($value) && preg_match('/\{\{.*}}/m', $value)) {
+                $context[$field] = new ContextVariable(substr($value, 2, -2));
             }
         }
+        return $context;
     }
 
     /**
      * Deserialize an object.
      * @param string|int $id The id.
      * @param string $clazz The class.
-     * @return IProgressionSerializable
+     * @return IProgressionSerializable|null
      * @throws Exception
      */
-    private static function deserializeObject(string|int $id, string $clazz) : IProgressionSerializable {
+    private static function deserializeObject(string|int $id, string $clazz) : ?IProgressionSerializable {
         return $clazz::getPermanentObject($id, $clazz);
     }
 }

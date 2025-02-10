@@ -95,13 +95,15 @@ abstract class KindOfToken extends APermanentObject {
      * @throws NotImplementedException
      */
     public function setStatePermanently(int $state) : void {
-        if (!$this->isEmpty()) {
-            if ($this->isLive() && $state === TokenState::PREVIOUSLY_LIVE) {
-                // Ok
-            } else if ($this->isDead() && $state === TokenState::PREVIOUSLY_DEAD) {
-                // Ok
-            }  else {
-                throw new SecurityException('Try to set a second state of a ' . get_class($this) . '.');
+        if ($state !== TokenState::CANCELED) {
+            if (!$this->isEmpty()) {
+                if ($this->isLive() && $state === TokenState::PREVIOUSLY_LIVE) {
+                    // Ok
+                } else if ($this->isDead() && $state === TokenState::PREVIOUSLY_DEAD) {
+                    // Ok
+                } else {
+                    throw new SecurityException('Try to set a second state of a ' . get_class($this) . '.');
+                }
             }
         }
         $this->state = $state;

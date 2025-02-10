@@ -23,11 +23,12 @@ class CPIntermediateEvent extends CPEvent {
      * @param string|null $id The id if available.
      * @param int $direction The direction.
      * @param int $type The type.
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
      */
     public function __construct(?string $id = null, int $direction = CPEventDirection::NONE,
-                                int $type = CPEventType::NONE) {
-        parent::__construct($direction, $type);
-        if (!is_null($id)) $this->id = $id;
+                                int $type = CPEventType::NONE, ?array $relatedUI = null) {
+        parent::__construct($id, $direction, $type, $relatedUI);
     }
 
 }

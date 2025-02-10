@@ -25,6 +25,24 @@ class ProcessInstance extends APermanentObject {
     protected int|null $id;
 
     /**
+     * The user who initiated the process instance.
+     * @type string
+     * @length 255
+     * @nullable
+     * @var string|null
+     */
+    protected string|null $user = null;
+
+    /**
+     * The group, in which the user initiated the process instance.
+     * @type string
+     * @length 255
+     * @nullable
+     * @var string|null
+     */
+    protected string|null $group = null;
+
+    /**
      * The state of the process instance.
      * @type int
      * @var int
@@ -69,11 +87,15 @@ class ProcessInstance extends APermanentObject {
 
     /**
      * Get all related state describing the instance.
-     * @return (Token|LocalState|Incident)[]
+     * @return (LocalState|Token|Incident)[]
      * @throws NotImplementedException
      */
     public function getInstanceStates() : array {
-        return LocalState::getPermanentObjectsWhere('processInstance', $this, LocalState::class);
+        return array_merge(
+            LocalState::getPermanentObjectsWhere('processInstance', $this, LocalState::class),
+            Token::getPermanentObjectsWhere('processInstance', $this, Token::class),
+            Incident::getPermanentObjectsWhere('processInstance', $this, Incident::class)
+        );
     }
 
 }

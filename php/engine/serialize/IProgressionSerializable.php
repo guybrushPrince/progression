@@ -45,6 +45,19 @@ interface IProgressionSerializable {
     public function updatePermanentObject() : bool;
 
     /**
+     * Delete the object permanently.
+     * @return bool
+     */
+    public function deletePermanentObject() : bool;
+
+    /**
+     * Get all objects of the type.
+     * @param string $class The class of the object.
+     * @return IProgressionSerializable[]
+     */
+    public static function getAllPermanentObjects(string $class) : array;
+
+    /**
      * A standard interface to get all objects with a given property.
      * @param string $field The property.
      * @param mixed $value The value.

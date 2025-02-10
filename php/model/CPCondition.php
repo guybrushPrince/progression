@@ -28,9 +28,11 @@ class CPCondition extends CPModel {
      * Constructor.
      * @param string|null $id The id.
      * @param string|null $condition The condition.
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
      */
-    public function __construct(?string $id = null, ?string $condition = null) {
-        if (!is_null($id)) $this->id = $id;
+    public function __construct(?string $id = null, ?string $condition = null, ?array $relatedUI = null) {
+        parent::__construct($id, $relatedUI);
         if (!is_null($condition)) $this->condition = $condition;
     }
 
@@ -41,7 +43,9 @@ class CPCondition extends CPModel {
      */
     public function isFulfilled(array $context) : bool {
         $fulfilled = false;
-        $condition = str_replace('}', '"]', str_replace('{', '$context["', $this->condition));
+        $condition = $this->getCondition();
+        $condition = str_replace('hasErrors', '(array_key_exists(CPTask::EXCEPTIONS, $context) && count($context[CPTask::EXCEPTIONS]) > 0)', $condition);
+        $condition = str_replace('}', '"]', str_replace('{', '$context["', $condition));
         $code = '$fulfilled = ' . $condition . ';';
         eval($code);
         return $fulfilled;

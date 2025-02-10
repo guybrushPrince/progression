@@ -21,11 +21,17 @@ class CPFlow extends CPModel implements GraphEdge {
     /**
      * Constructor.
      * @param string|null $id The id (if available).
+     * @param CPNode|null $source The source.
+     * @param CPNode|null $target The target.
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
      */
-    public function __construct(?string $id = null, ?CPNode $source = null, ?CPNode $target = null) {
-        if ($id !== null) $this->id = $id;
-        if ($source) $this->source = $source;
-        if ($target) $this->target = $target;
+    public function __construct(?string $id = null, ?CPNode $source = null, ?CPNode $target = null,
+                                ?array $relatedUI = null, ?CPCondition $condition = null) {
+        parent::__construct($id, $relatedUI);
+        if (!is_null($source)) $this->source = $source;
+        if (!is_null($target)) $this->target = $target;
+        if (!is_null($condition)) $this->setUseCondition($condition);
     }
 
     /**
@@ -48,6 +54,7 @@ class CPFlow extends CPModel implements GraphEdge {
      * The condition when to take this flow.
      * @type CPCondition
      * @var CPCondition|Closure|null
+     * @nonviable
      */
     protected CPCondition|Closure|null $useCondition = null;
 

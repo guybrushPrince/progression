@@ -22,10 +22,11 @@ class CPStartEvent extends CPEvent {
      * Constructor.
      * @param string|null $id The id of the event (if available).
      * @param int $type The event type.
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
      */
-    public function __construct(?string $id = null, int $type = CPEventType::NONE) {
-        parent::__construct(CPEventDirection::CATCHING, $type);
-        if ($id !== null) $this->id = $id;
+    public function __construct(?string $id = null, int $type = CPEventType::NONE, ?array $relatedUI = null) {
+        parent::__construct($id, CPEventDirection::CATCHING, $type, $relatedUI);
     }
 }
 ?>

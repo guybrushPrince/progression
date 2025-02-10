@@ -20,9 +20,18 @@ class CPProcessModel extends CPModel implements Graph {
     /**
      * Constructor.
      * @param string|null $id The id (if available).
+     * @param string|null $bpmnModelOrFile A path to a BPMN file or the content of a BPMN file.
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
      */
-    public function __construct(?string $id = null) {
-        if ($id !== null) $this->id = $id;
+    public function __construct(?string $id = null, ?string $bpmnModelOrFile = null, ?array $relatedUI = null) {
+        parent::__construct($id, $relatedUI);
+        if (!is_null($bpmnModelOrFile)) {
+            if (is_file($bpmnModelOrFile)) {
+                $bpmnModelOrFile = file_get_contents($bpmnModelOrFile);
+            }
+            $this->bpmnModel = $bpmnModelOrFile;
+        }
     }
 
     /**
@@ -113,22 +122,10 @@ class CPProcessModel extends CPModel implements Graph {
                 } else $states[$key] = $state;
             }
         } else $states = [];
-        $graph = 'digraph ' . CPLogger::slug($this->getPermanentId()) . ' {' . PHP_EOL;
+        $graph = 'digraph ' . CPLogger::slug($this->getPermanentId()) . (array_key_exists('id', $properties) ? $properties['id'] : '') . ' {' . PHP_EOL;
         foreach ($this->getElements() as $element) {
-            $graph .= 'n' . CPLogger::slug($element->getPermanentId()) . '[label="' . $element->getPermanentId() . '" fixedsize="true" width="1" shape="' .
-                [
-                    CPPHPExecuteTask::class => 'box',
-                    CPRExecuteTask::class => 'box',
-                    CPExecuteTask::class => 'box',
-                    CPTask::class => 'box',
-                    CPStartEvent::class => 'circle',
-                    CPEndEvent::class => 'doublecircle',
-                    CPIntermediateEvent::class => 'Mcircle',
-                    CPANDGateway::class => 'diamond',
-                    CPXORGateway::class => 'diamond',
-                    CPORGateway::class => 'diamond',
-                    CPGateway::class => 'diamond'
-                ][get_class($element)] . '"';
+            $graph .= 'n' . CPLogger::slug($element->getPermanentId()) . '[label="' . $element->getPermanentId() . '" ' .
+                'fixedsize="true" width="1" shape="' . $this->getShape($element) . '"';
             if (array_key_exists($element->getPermanentId(), $states)) {
                 $localState = $states[$element->getPermanentId()];
                 $graph .= ' color="' . $this->getColor($localState->getState()) . '"';
@@ -150,6 +147,28 @@ class CPProcessModel extends CPModel implements Graph {
     }
 
     /**
+     * Get the shape for a given node.
+     * @param CPNode $node The node.
+     * @return string
+     */
+    private function getShape(CPNode $node) : string {
+        return match (get_class($node)) {
+            CPPHPExecuteTask::class => 'box',
+            CPRExecuteTask::class => 'box',
+            CPExecuteTask::class => 'box',
+            CPTask::class => 'box',
+            CPStartEvent::class => 'circle',
+            CPEndEvent::class => 'doublecircle',
+            CPIntermediateEvent::class => 'Mcircle',
+            CPANDGateway::class => 'diamond',
+            CPXORGateway::class => 'diamond',
+            CPORGateway::class => 'diamond',
+            CPGateway::class => 'diamond',
+            default => 'box',
+        };
+    }
+
+    /**
      * @param int $state
      * @return string
      */
@@ -166,11 +185,12 @@ class CPProcessModel extends CPModel implements Graph {
 
     /**
      * Checks whether the given model element is part of this process model.
-     * @param CPModel $element The model elemen
+     * @param CPModel|null $element The model element.
      * @return bool
      * @throws NotImplementedException
      */
-    public function contains(CPModel $element) : bool {
+    public function contains(?CPModel $element) : bool {
+        if (is_null($element)) return false;
         foreach ($this->getElements() as $el) {
             if ($el->getPermanentId() === $element->getPermanentId()) return true;
         }

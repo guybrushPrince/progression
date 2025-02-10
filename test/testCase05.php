@@ -3,7 +3,7 @@
 include_once __DIR__ . '/../../cliff/php/Persistence.php';
 include_once __DIR__ . '/../php/permanent/SimplePersistence.php';
 
-Engine::instance(null, CPLogger::LEVEL_NONE);
+Engine::instance(null, CPLogger::LEVEL_DEBUG);
 
 foreach (Token::getAll() as $token) $token->delete();
 foreach (Incident::getAll() as $incident) $incident->delete();
@@ -57,11 +57,12 @@ if (!$processModel1 || !$processModel2) {
     $systemEvent->addEventRecipient($startEvent);
 
     $persistence->startTransaction();
-    $processModel1->createPermanentObject();
-    $processModel2->createPermanentObject();
-    $condition->createPermanentObject();
-    $flow02->updatePermanentObject();
+    $processModel1->updatePermanentObject();
+    $processModel2->updatePermanentObject();
+    $condition->updatePermanentObject();
+    foreach ($processModel1->getFlows() as $flow) $flow->updatePermanentObject();
     $inThrowEvent->updatePermanentObject();
+    $endEvent2->updatePermanentObject();
     $systemEvent->updatePermanentObject();
     $persistence->endTransaction();
 
@@ -96,7 +97,7 @@ $persistence->endTransaction();
 $instance = Engine::instance()->instantiate($processModel1, $incident);
 //Engine::instance()->executeUntilDone();
 while (Engine::instance()->tick()) {
-    //echo $instance->getProcessModel()->asDotGraph(['states' => $instance->getInstanceStates()]);
+    echo $instance->getProcessModel()->asDotGraph(['states' => $instance->getInstanceStates()]);
 }
 
 ?>

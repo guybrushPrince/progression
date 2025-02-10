@@ -1,6 +1,7 @@
 <?php
 
 include_once __DIR__ . '/../../cliff/php/Persistence.php';
+include_once __DIR__ . '/../../vendor/autoload.php';
 include_once __DIR__ . '/../php/permanent/SimplePersistence.php';
 
 Engine::instance(null, CPLogger::LEVEL_INFO);
@@ -36,7 +37,7 @@ if (!$processModel || !$systemProcessModel || count($systemProcessInstance) === 
     $systemProcessInstance->setState(ProcessState::RUNNING);
 
     $persistence->startTransaction();
-    $processModel->updatePermanentObject();
+    $processModel->createPermanentObject();
     $systemProcessModel->createPermanentObject();
     $systemProcessInstance->createPermanentObject();
     $persistence->endTransaction();

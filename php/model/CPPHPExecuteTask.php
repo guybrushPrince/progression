@@ -22,16 +22,19 @@ class CPPHPExecuteTask extends CPExecuteTask {
      * Constructor.
      * @param string|null $id The id (if available).
      * @param string|null $code The code (if available).
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
      */
-    public function __construct(?string $id = null, ?string $code = null) {
-        if ($id !== null) $this->id = $id;
-        if ($code !== null) $this->code = $code;
+    public function __construct(?string $id = null, ?string $code = null, ?array $relatedUI = null) {
+        parent::__construct($id, $relatedUI);
+        if (!is_null($code)) $this->code = $code;
     }
 
     /**
      * @inheritDoc
      */
     public function execute(array $context) : array|PendingResult {
+        $context = self::prepareContext($context);
         $code = implode(PHP_EOL, array_map(function (string $key) {
             return '$' . str_replace(' ', '_', $key) . ' = $context["' . $key . '"];';
         }, array_keys($context))) . PHP_EOL;
@@ -52,5 +55,10 @@ class CPPHPExecuteTask extends CPExecuteTask {
     public function isTerminated(array $context) : array|PendingResult {
         return $context;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function cancel(array $context) : void { }
 }
 ?>

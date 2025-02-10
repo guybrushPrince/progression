@@ -78,6 +78,32 @@ if (!class_exists('CliffSerializable')) {
              * @inheritDoc
              * @throws NotImplementedException
              */
+            public function deletePermanentObject() : bool {
+                try {
+                    throw new NotImplementedException('Please provide an implementation of deletePermanentObject().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return false;
+            }
+
+            /**
+             * @inheritDoc
+             * @throws NotImplementedException
+             */
+            public static function getAllPermanentObjects(string $class) : array {
+                try {
+                    throw new NotImplementedException('Please provide an implementation of getAllPermanentObjects().');
+                } catch (NotImplementedException $exception) {
+                    Engine::getLogger()->error($exception);
+                }
+                return [];
+            }
+
+            /**
+             * @inheritDoc
+             * @throws NotImplementedException
+             */
             public static function getPermanentObjectsWhere(string $field, mixed $value, string $class,
                                                             ?int $limit = null) : array {
                 try {

@@ -22,10 +22,10 @@ class CPSystemEvent extends CPEvent {
      * Constructor.
      * @param string|null $id The id of the event (if available).
      * @param int $type The event type.
+     * @throws UnserializableObjectException
      */
     public function __construct(?string $id = null, int $type = CPEventType::NONE) {
-        parent::__construct(CPEventDirection::CATCHING, $type);
-        if ($id !== null) $this->id = $id;
+        parent::__construct($id, CPEventDirection::THROWING, $type);
     }
 }
 ?>

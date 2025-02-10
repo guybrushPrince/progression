@@ -24,6 +24,14 @@ class Token extends KindOfToken {
     protected CPCondition|Closure|null $condition = null;
 
     /**
+     * The corresponding flow to this token (if available).
+     * @type CPFlow
+     * @nullable
+     * @var CPFlow|Closure|null
+     */
+    protected CPFlow|Closure|null $flow = null;
+
+    /**
      * Checks if this token is conditional.
      * @return bool
      */

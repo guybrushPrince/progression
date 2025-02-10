@@ -27,7 +27,7 @@ trait Contextable {
      * @throws DatabaseError|UnserializableObjectException|Exception
      */
     public function addToContextPermanently(array $addContext) : bool {
-        return $this->setContextPermanently($this->getDeserializedContext() + $addContext);
+        return $this->setContextPermanently($addContext + $this->getDeserializedContext());
     }
 
     /**

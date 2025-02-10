@@ -18,5 +18,7 @@ class ProcessState {
     const FINISHED    = 3;
     const ERROR       = 4;
 
+    const CANCELED    = 666;
+
 }
 ?>

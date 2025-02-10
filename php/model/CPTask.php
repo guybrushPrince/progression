@@ -16,6 +16,8 @@
  */
 abstract class CPTask extends CPNode {
 
+    public const EXCEPTIONS = '__exceptions';
+
     /**
      * Executes this task in the given context (and extends the context when results are available).
      * @param array $context The context as key-value-pairs.
@@ -29,6 +31,13 @@ abstract class CPTask extends CPNode {
      * @return array|PendingResult
      */
     abstract public function isTerminated(array $context) : array|PendingResult;
+
+    /**
+     * Cancel the task.
+     * @param array $context The context as key-value-pairs.
+     * @return void
+     */
+    abstract public function cancel(array $context) : void;
 
 }
 ?>

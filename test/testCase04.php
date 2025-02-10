@@ -3,7 +3,7 @@
 include_once __DIR__ . '/../../cliff/php/Persistence.php';
 include_once __DIR__ . '/../php/permanent/SimplePersistence.php';
 
-Engine::instance(null, CPLogger::LEVEL_INFO);
+Engine::instance(null, CPLogger::LEVEL_DEBUG);
 
 foreach (Token::getAll() as $token) $token->delete();
 foreach (Incident::getAll() as $incident) $incident->delete();
@@ -14,7 +14,7 @@ $processModel = CPProcessModel::getPermanentObject('testCase04', 'CPProcessModel
 $systemEvent = CPSystemEvent::getPermanentObject('__system_general_start_event', 'CPSystemEvent');
 $systemProcessModel = CPProcessModel::getPermanentObject('__system', 'CPProcessModel');
 $systemProcessInstance = ProcessInstance::getPermanentObjectsWhere('processModel', $systemProcessModel, ProcessInstance::class);
-if (!$processModel) {
+if ($processModel) {
     $persistence = SimplePersistence::instance();
 
     $processModel = new CPProcessModel('testCase04');
@@ -39,9 +39,9 @@ if (!$processModel) {
     $systemEvent->addEventRecipient($startEvent);
 
     $persistence->startTransaction();
-    $processModel->createPermanentObject();
-    $condition->createPermanentObject();
-    $flow02->updatePermanentObject();
+    $processModel->updatePermanentObject();
+    $condition->updatePermanentObject();
+    foreach ($processModel->getFlows() as $flow) $flow->updatePermanentObject();
     $systemEvent->updatePermanentObject();
     $persistence->endTransaction();
 
@@ -59,7 +59,6 @@ if (count($systemProcessInstance) >= 1) {
     $systemProcessInstance->setState(ProcessState::RUNNING);
 
     $persistence->startTransaction();
-    $processModel->updatePermanentObject();
     $systemProcessInstance->createPermanentObject();
     $persistence->endTransaction();
 }
@@ -67,14 +66,16 @@ if (count($systemProcessInstance) >= 1) {
 $incident = new Incident();
 $incident->setProcessInstance($systemProcessInstance);
 $incident->setSender(CPSystemEvent::getPermanentObject('__system_general_start_event', CPSystemEvent::class));
+//$incident->setReceiver(CPStartEvent::getPermanentObject('testCase04-startEvent', CPStartEvent::class));
 $incident->setContext(ContextSerializer::serialize(['x' => 3]));
 
 $persistence->startTransaction();
 $incident->createPermanentObject();
 $persistence->endTransaction();
 
-$instance = Engine::instance()->instantiate($processModel, $incident);
+$instance = Engine::instance()->instantiate($processModel, $incident, $systemProcessInstance);
 //Engine::instance()->executeUntilDone();
+echo $instance->getProcessModel()->asDotGraph(['states' => $instance->getInstanceStates()]);
 while (Engine::instance()->tick()) {
     echo $instance->getProcessModel()->asDotGraph(['states' => $instance->getInstanceStates()]);
 }

@@ -26,6 +26,24 @@ class LocalState extends APermanentObject {
     protected int|null $id;
 
     /**
+     * The user who initiated the process instance.
+     * @type string
+     * @length 255
+     * @nullable
+     * @var string|null
+     */
+    private string|null $user = null;
+
+    /**
+     * The group, in which the user initiated the process instance.
+     * @type string
+     * @length 255
+     * @nullable
+     * @var string|null
+     */
+    private string|null $group = null;
+
+    /**
      * The node it wraps.
      * @crucial
      * @type CPNode
@@ -85,7 +103,7 @@ class LocalState extends APermanentObject {
      * @crucial
      * @var ProcessInstance|Closure|null
      */
-    protected ProcessInstance|Closure|null $processInstance;
+    private ProcessInstance|Closure|null $processInstance;
 
     /**
      * Set the state of this local state permanently.
@@ -193,13 +211,13 @@ class LocalState extends APermanentObject {
 
         // The node is executable or skippable. We have to join the contexts.
         $nextContext = array_reduce($this->getInTokens(), function (array $context, Token $in) : array {
-            $context += $in->getDeserializedContext();
+            if ($in->isLive()) $context = $in->getDeserializedContext() + $context;
             return $context;
         }, []);
         // ... also the contexts of the incoming incidents.
         $nextContext = array_reduce($this->getInIncidents(), function (array $context, Incident $in) : array {
             // Just use the context if the incident really happened.
-            if ($in->isLive()) $context += $in->getDeserializedContext();
+            if ($in->isLive()) $context = $in->getDeserializedContext() + $context;
             return $context;
         }, $nextContext);
 
@@ -219,6 +237,8 @@ class LocalState extends APermanentObject {
         // Register the new state of this task.
         $this->setContextPermanently($nextContext);
         $this->setStatePermanently($executable ? TokenState::LIVE : TokenState::PREVIOUSLY_DEAD);
+
+        Engine::getLogger()->debug('Set context of', $this->getPermanentId(), 'to', $nextContext);
 
         if ($executable) {
             // Execute the node if it represents a task.
@@ -400,7 +420,7 @@ class LocalState extends APermanentObject {
         if ($newContext instanceof PendingResult) {
             SimplePersistence::instance()->startTransaction();
             $newContext->setId($this->getId());
-            $context += $newContext->getDeserializedContext();
+            $context = $newContext->getDeserializedContext() + $context;
             $newContext->setContext(ContextSerializer::serialize($context));
             $newContext->createPermanentObject();
             SimplePersistence::instance()->endTransaction();
@@ -427,7 +447,7 @@ class LocalState extends APermanentObject {
 
         // Check termination.
         $node = $this->getNode();
-        $pendingResult = PendingResult::getPermanentObject($this->getPermanentId());
+        $pendingResult = PendingResult::getPermanentObject($this->getPermanentId(), PendingResult::class);
 
         if (!$pendingResult) $context = $this->getDeserializedContext();
         else $context = $pendingResult->getDeserializedContext();
@@ -441,6 +461,26 @@ class LocalState extends APermanentObject {
             $this->setOutputTokens($newContext);
             return true;
         }
+    }
+
+    /**
+     * Cancels the local state.
+     * @return bool
+     * @throws NotImplementedException
+     * @throws Exception
+     * @throws UnserializableObjectException
+     */
+    public function cancel() : bool {
+        if ($this->getState() !== TokenState::PENDING) return true;
+        // Check termination.
+        $node = $this->getNode();
+        $pendingResult = PendingResult::getPermanentObject($this->getPermanentId(), PendingResult::class);
+
+        if (!$pendingResult) $context = $this->getDeserializedContext();
+        else $context = $pendingResult->getDeserializedContext();
+
+        $node->cancel($context);
+        return true;
     }
 
 }

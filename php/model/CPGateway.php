@@ -17,13 +17,5 @@
  */
 abstract class CPGateway extends CPNode {
 
-    /**
-     * Constructor.
-     * @param string|null $id The id of the event (if available).
-     */
-    public function __construct(?string $id = null) {
-        if ($id !== null) $this->id = $id;
-    }
-
 }
 ?>

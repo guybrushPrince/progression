@@ -12,10 +12,21 @@
  * @author Dr. Dipl.-Inf. Thomas M. Prinz
  *
  * @persistent
+ * @inParent
  */
 class CPVirtualTask extends CPTask {
 
     use CPVirtualTaskPersistentTrait;
+
+    /**
+     * Constructor.
+     * @param string|null $id The id.
+     * @param string[]|null $relatedUI A set of related UI elements (if available).
+     * @throws UnserializableObjectException
+     */
+    public function __construct(?string $id = null, ?array $relatedUI = null) {
+        parent::__construct($id, $relatedUI);
+    }
 
     /**
      * @inheritDoc
@@ -31,5 +42,10 @@ class CPVirtualTask extends CPTask {
     public function isTerminated(array $context): array|PendingResult {
         return $context;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function cancel(array $context) : void { }
 }
 ?>
