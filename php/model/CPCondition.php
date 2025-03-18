@@ -38,13 +38,18 @@ class CPCondition extends CPModel {
 
     /**
      * Evaluate the condition.
-     * @param array $context
+     * @param array $context The context with all variables.
      * @return bool
      */
     public function isFulfilled(array $context) : bool {
         $fulfilled = false;
         $condition = $this->getCondition();
         $condition = str_replace('hasErrors', '(array_key_exists(CPTask::EXCEPTIONS, $context) && count($context[CPTask::EXCEPTIONS]) > 0)', $condition);
+        $condition = preg_replace_callback('/exists\((.*)\)/mU', function ($matches) use (&$variables) {
+            $varName = $matches[1];
+            $variables[$varName] = '\'' . $varName . '\'';
+            return 'array_key_exists("' . $varName . '", $context)';
+        }, $condition);
         $condition = str_replace('}', '"]', str_replace('{', '$context["', $condition));
         $code = '$fulfilled = ' . $condition . ';';
         eval($code);

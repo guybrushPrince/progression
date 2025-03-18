@@ -29,7 +29,11 @@ if (class_exists('Authentication')) {
                 $userObj = User::get($user);
                 $res = $authentication->login($user, $userObj->getPassword(), $group);
 
-                if (is_string($res)) return true;
+                echo "Login " . $user . ' ' . $res . PHP_EOL;
+
+                if (is_string($res)) {
+                    return $authentication->isLoggedIn($user);
+                }
                 else return false;
             } else return true;
         }

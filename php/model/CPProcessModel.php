@@ -179,7 +179,8 @@ class CPProcessModel extends CPModel implements Graph {
             TokenState::DEAD => 'firebrick1',
             TokenState::PREVIOUSLY_LIVE => 'forestgreen',
             TokenState::PREVIOUSLY_DEAD => 'firebrick4',
-            TokenState::PENDING => 'gold'
+            TokenState::PENDING => 'gold',
+            TokenState::CANCELED => 'red'
         ][$state];
     }
 

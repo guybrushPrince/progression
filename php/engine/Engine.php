@@ -208,10 +208,18 @@ class Engine {
         }, $processModel->getNodes());
         SimplePersistence::instance()->endTransaction();
 
+        $allStartEvents = $startEvents;
+
         // Start the process instance.
         if (!$incident && count($startEvents) >= 2) {
-            $instance->setStatePermanently(ProcessState::ERROR);
-            throw new SecurityException('Process model with multiple start events was instantiated without event.');
+            $nonSpecificStarts = array_filter($startEvents, function (LocalState $startEvent) {
+                $node = $startEvent->getNode();
+                return $node instanceof CPStartEvent && $node->getType() === CPEventType::NONE;
+            });
+            if (count($nonSpecificStarts) >= 2) {
+                $instance->setStatePermanently(ProcessState::ERROR);
+                throw new SecurityException('Process model with multiple start events was instantiated without event.');
+            } else $startEvents = $nonSpecificStarts;
         }
 
         if ($incident) {
@@ -241,6 +249,14 @@ class Engine {
             foreach ($startEventState->getInIncidents() as $inIncident) {
                 self::getLogger()->log('Set', get_class($inIncident), $inIncident->getPermanentId(), 'of state of', get_class($startEventState->getNode()), $startEventState->getNode()->getPermanentId(), 'to', TokenState::LIVE);
                 $inIncident->setStatePermanently(TokenState::LIVE);
+            }
+        }
+        foreach ($allStartEvents as $startEvent) {
+            if ($startEvent instanceof LocalState && $startEvent->getPermanentId() !== $startEventState->getPermanentId()) {
+                foreach ($startEvent->getInIncidents() as $inIncident) {
+                    self::getLogger()->log('Set', get_class($inIncident), $inIncident->getPermanentId(), 'of state of', get_class($startEventState->getNode()), $startEventState->getNode()->getPermanentId(), 'to', TokenState::DEAD);
+                    $inIncident->setStatePermanently(TokenState::DEAD);
+                }
             }
         }
 

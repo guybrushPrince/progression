@@ -76,5 +76,6 @@ interface IProgressionSerializable {
      * @return IProgressionSerializable[]
      */
     public static function getPermanentObjectsWhereAll(array $map, string $class, ?int $limit = null) : array;
+
 }
 ?>
