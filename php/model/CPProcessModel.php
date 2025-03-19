@@ -57,7 +57,7 @@ class CPProcessModel extends CPModel implements Graph {
      * @type string
      * @length MEDIUM
      */
-    protected string|null $bpmnModel;
+    protected string|null $bpmnModel = null;
 
     /**
      * @inheritDoc

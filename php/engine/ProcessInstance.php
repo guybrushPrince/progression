@@ -22,7 +22,7 @@ class ProcessInstance extends APermanentObject {
      * @var int|null
      * @key
      */
-    protected int|null $id;
+    protected int|null $id = null;
 
     /**
      * The user who initiated the process instance.

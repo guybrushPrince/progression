@@ -13,9 +13,9 @@ interface IProgressionSerializable {
 
     /**
      * Returns the permanent id of an object.
-     * @return string|int
+     * @return string|int|null
      */
-    public function getPermanentId() : string|int;
+    public function getPermanentId() : string|int|null;
 
     /**
      * Returns the permanent class of an object.

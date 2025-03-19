@@ -23,7 +23,8 @@ if (!class_exists('Persistence')) {
              * @throws NotImplementedException
              */
             public static function instance() : APersistence {
-                throw new NotImplementedException('Please implement the *instance* method.');
+                CPProcessModel::init();
+                return new SimplePersistence();
             }
 
             /**
@@ -31,7 +32,7 @@ if (!class_exists('Persistence')) {
              * @throws NotImplementedException
              */
             public function startTransaction() : bool {
-                throw new NotImplementedException('Please implement the *startTransaction* method.');
+                return true;
             }
 
             /**
@@ -39,7 +40,7 @@ if (!class_exists('Persistence')) {
              * @throws NotImplementedException
              */
             public function endTransaction() : bool {
-                throw new NotImplementedException('Please implement the *endTransaction* method.');
+                return true;
             }
         }
     }

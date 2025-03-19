@@ -18,9 +18,8 @@ if (!class_exists('CliffSerializable')) {
 
             /**
              * @inheritDoc
-             * @throws NotImplementedException
              */
-            public function getPermanentId() : string|int {
+            public function getPermanentId() : string|int|null {
                 try {
                     throw new NotImplementedException('Please provide an implementation of getPermanentId().');
                 } catch (NotImplementedException $exception) {
@@ -50,7 +49,6 @@ if (!class_exists('CliffSerializable')) {
 
             /**
              * @inheritDoc
-             * @throws NotImplementedException
              */
             public function createPermanentObject() : bool {
                 try {
@@ -63,7 +61,6 @@ if (!class_exists('CliffSerializable')) {
 
             /**
              * @inheritDoc
-             * @throws NotImplementedException
              */
             public function updatePermanentObject() : bool {
                 try {
@@ -76,7 +73,6 @@ if (!class_exists('CliffSerializable')) {
 
             /**
              * @inheritDoc
-             * @throws NotImplementedException
              */
             public function deletePermanentObject() : bool {
                 try {
@@ -89,7 +85,6 @@ if (!class_exists('CliffSerializable')) {
 
             /**
              * @inheritDoc
-             * @throws NotImplementedException
              */
             public static function getAllPermanentObjects(string $class) : array {
                 try {
@@ -102,7 +97,6 @@ if (!class_exists('CliffSerializable')) {
 
             /**
              * @inheritDoc
-             * @throws NotImplementedException
              */
             public static function getPermanentObjectsWhere(string $field, mixed $value, string $class,
                                                             ?int $limit = null) : array {
@@ -116,7 +110,6 @@ if (!class_exists('CliffSerializable')) {
 
             /**
              * @inheritDoc
-             * @throws NotImplementedException
              */
             public static function getPermanentObjectsWhereAll(array $map, string $class, ?int $limit = null) : array {
                 try {

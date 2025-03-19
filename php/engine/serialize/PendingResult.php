@@ -24,7 +24,7 @@ class PendingResult extends APermanentObject {
      * @var int|null
      * @key
      */
-    protected int|null $id;
+    protected int|null $id = null;
 
     /**
      * The context of execution (the parameters, values, etc. it knows). It is serialized as string.

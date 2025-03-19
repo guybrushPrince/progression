@@ -27,7 +27,7 @@ class ContextSerializer {
      */
     public static function serialize(array $context, bool $compressed = false, bool $stringStyle = false) : string {
         $context = self::serializeObjects($context, $compressed, $stringStyle);
-        return Tools::jsonEncode($context);
+        return CPTools::jsonEncode($context);
     }
 
     /**
@@ -84,7 +84,7 @@ class ContextSerializer {
     public static function deserialize(string|null $context) : array {
         if ($context === null) $context = [];
         else {
-            $context = Tools::jsonDecode($context);
+            $context = CPTools::jsonDecode($context);
             $context = self::deserializeObjects($context);
         }
         return $context;

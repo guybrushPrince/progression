@@ -20,7 +20,7 @@ abstract class CPModel extends APermanentObject {
      * @var string
      * @key
      */
-    protected string $id;
+    protected ?string $id = null;
 
     /**
      * Ids of UI elements being related to this model element.
@@ -45,10 +45,10 @@ abstract class CPModel extends APermanentObject {
 
     /**
      * Get the id.
-     * @return string
+     * @return ?string
      */
-    public function getId() : string {
-        return $this->getKey();
+    public function getId() : ?string {
+        return $this->getPermanentId();
     }
 
     /**

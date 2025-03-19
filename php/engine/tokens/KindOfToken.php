@@ -23,7 +23,7 @@ abstract class KindOfToken extends APermanentObject {
      * @var int|null
      * @key
      */
-    protected int|null $id;
+    protected int|null $id = null;
 
     /**
      * The state of the token.
@@ -114,7 +114,7 @@ abstract class KindOfToken extends APermanentObject {
         // We have to inform local states
         if ($state === TokenState::LIVE || $state === TokenState::DEAD) {
             if ($this instanceof Token) $localStates = LocalState::getPermanentObjectsWhere('inTokens', $this, LocalState::class);
-            else $localStates = LocalState::getPermanentObjectsWhere('inIncidents', $this, LocalState::class);;
+            else $localStates = LocalState::getPermanentObjectsWhere('inIncidents', $this, LocalState::class);
             foreach ($localStates as $localState) $localState->inform();
         }
     }

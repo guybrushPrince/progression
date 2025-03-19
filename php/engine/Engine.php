@@ -1,5 +1,11 @@
 <?php
 
+if (!file_exists(__DIR__ . '/../../../cliff/php/loader.php')) {
+    include_once __DIR__ . '/../progloader.php';
+} else {
+    include_once __DIR__ . '/../../../cliff/php/loader.php';
+}
+
 include_once __DIR__ . '/../context/SimpleContextBuilder.php';
 SimpleContextBuilder::loadContext();
 
@@ -118,7 +124,7 @@ class Engine {
                                 ?ProcessInstance $callee = null, ?string $user = null,
                                 ?string $group = null) : ProcessInstance {
 
-        self::getLogger()->log('Instantiate', $processModel->getKey(), 'with', $incident ? [$incident->getPermanentId(), $incident->getDeserializedContext()] : null, 'by', $user, 'in', $group);
+        self::getLogger()->log('Instantiate', $processModel->getPermanentId(), 'with', $incident ? [$incident->getPermanentId(), $incident->getDeserializedContext()] : null, 'by', $user, 'in', $group);
 
         if (!$user) $user = AAuthentication::SYSTEM_USER;
         if (!$group) $group = AAuthentication::SYSTEM_GROUP;
@@ -187,7 +193,7 @@ class Engine {
             $localState->setOutTokens($outgoingTokens);
             $localState->setNode($node);
             $localState->setProcessInstance($instance);
-            self::getLogger()->debug('Created local state for', get_class($node), $node->getKey(), ' with ', count($incomingTokens), count($outgoingTokens));
+            self::getLogger()->debug('Created local state for', get_class($node), $node->getPermanentId(), ' with ', count($incomingTokens), count($outgoingTokens));
             if ($node instanceof CPStartEvent) $startEvents[$node->getPermanentId()] = $localState;
 
             // Create incoming or outgoing events / incidents.
@@ -202,7 +208,7 @@ class Engine {
 
             $localState->createPermanentObject();
 
-            self::getLogger()->debug('Instantiated tokens, events, and state for ', get_class($node), $node->getKey());
+            self::getLogger()->debug('Instantiated tokens, events, and state for ', get_class($node), $node->getPermanentId());
 
             return $localState;
         }, $processModel->getNodes());

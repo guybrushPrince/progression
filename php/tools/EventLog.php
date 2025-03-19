@@ -25,9 +25,9 @@ class EventLog extends APermanentObject {
      * @type int
      * @auto
      * @key
-     * @var int
+     * @var int|null
      */
-    protected ?int $id;
+    protected ?int $id = null;
 
     /**
      * The process instance but just its id.
