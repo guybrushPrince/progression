@@ -22,6 +22,7 @@ class Installer {
      */
     private const KEY = 'key';
     private const TYPE = 'type';
+    private const NONVIABLE = 'nonviable';
     private const PERSISTENT = 'persistent';
 
     /**
@@ -168,14 +169,16 @@ class Installer {
         if (count($key) === 0) return '';
         $key = array_shift($key);
         $code  = '    public function __intern_serialize(array &$context = []) : array {' . PHP_EOL;
-        $code .= '        $objId = $this->' . $key->getName() . ' . \'-\' . get_class($this);' . PHP_EOL;
+        $code .= '        $objId = get_class($this) . \'-\' . $this->' . $key->getName() . ';' . PHP_EOL;
         $code .= '        if (array_key_exists($objId, $context)) return $context[$objId];' . PHP_EOL;
         $code .= '        $s = [];' . PHP_EOL;
         $code .= '        $context[$objId] = &$s;' . PHP_EOL;
         foreach ($class->getProperties() as $property) {
             $type = $this->getType($property);
+            $nonviable = $this->getAnnotation(self::NONVIABLE, $property);
             $code .= '        $s[\'' . $property->getName() . '\'] = $this->__serializeProperty($this->' .
-                self::getGetterName($property->getName(), $type) . '(), $context);' . PHP_EOL;
+                self::getGetterName($property->getName(), $type) . '(), $context, ' .
+                ($nonviable ? 'true' : 'false') . ');' . PHP_EOL;
         }
         $code .= '        return $s;' . PHP_EOL;
         $code .= '    }' . PHP_EOL;
@@ -199,7 +202,7 @@ class Installer {
         });
         if (count($key) === 0) return '';
         $key = array_shift($key);
-        $code .= '        $objId = $obj[\'' . $key->getName() . '\'] . \'-' . $class->getName() . '\';' . PHP_EOL;
+        $code .= '        $objId =  \'' . $class->getName() . '-\' . $obj[\'' . $key->getName() . '\'];' . PHP_EOL;
         $code .= '        $context[$objId] = $o;' . PHP_EOL;
         foreach ($class->getProperties() as $property) {
             $code .= '        $o->' . $property->getName() . ' = $o->__deserializeProperty($obj[\'' . $property->getName() .

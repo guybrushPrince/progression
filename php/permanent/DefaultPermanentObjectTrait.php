@@ -7,6 +7,18 @@ trait DefaultPermanentObjectTrait {
     private const LINK_CLASS = '__class';
 
     /**
+     * A simple internal cache of objects to speed up the engine.
+     * @var APermanentObject[]
+     */
+    private static array $_objectCache = [];
+
+    /**
+     * The cache is dirty if an object was created.
+     * @var string[][]
+     */
+    private static array $_dirty = [];
+
+    /**
      * Initialize the default db.
      * @return bool
      */
@@ -44,7 +56,7 @@ trait DefaultPermanentObjectTrait {
      */
     private static function getDBFolder(string $class) : string {
         $folder = self::DB_LOCATION . '/' . $class . '/';
-        if (!file_exists($folder)) {
+        if (!array_key_exists($folder, self::$_dirty) && !file_exists($folder)) {
             mkdir($folder, 0777, true);
         }
         return $folder;
@@ -57,9 +69,12 @@ trait DefaultPermanentObjectTrait {
     public static function getPermanentObject(int|string $id, string $class, array &$context = []) : ?IProgressionSerializable {
         $objId = self::getObjectId($id, $class);
         if (array_key_exists($objId, $context)) return $context[$objId];
+        if (array_key_exists($objId, self::$_objectCache)) return self::$_objectCache[$objId];
         $file = self::getDBFile($id, $class);
         if (file_exists($file)) {
-            return $class::__intern_deserialize(CPTools::jsonDecode(file_get_contents($file)), $context);
+            $obj = $class::__intern_deserialize(CPTools::jsonDecode(file_get_contents($file)), $context);
+            self::$_objectCache[$objId] = $obj;
+            return $obj;
         } else return null;
     }
 
@@ -68,6 +83,10 @@ trait DefaultPermanentObjectTrait {
      */
     public function createPermanentObject(array &$context = []) : bool {
         if (is_null($this->getPermanentId())) $this->id = self::nextKey();
+        $objId = self::getObjectId($this->getPermanentId(), $this->getPermanentClass());
+        self::$_objectCache[$objId] = $this;
+        $folder = self::getDBFolder($this->getPermanentClass());
+        if (array_key_exists($folder, self::$_dirty)) self::$_dirty[$folder][] = $objId;
         $file = self::getDBFile($this->getPermanentId(), $this->getPermanentClass());
         return file_put_contents($file, CPTools::jsonEncode($this->__intern_serialize($context)));
     }
@@ -96,12 +115,21 @@ trait DefaultPermanentObjectTrait {
      */
     public static function getAllPermanentObjects(string $class, array &$context = []) : array {
         $folder = self::getDBFolder($class);
+        if (array_key_exists($folder, self::$_dirty)) {
+            return array_map(function (string $objId) {
+                return self::$_objectCache[$objId];
+            }, self::$_dirty[$folder]);
+        }
         if (file_exists($folder)) {
             $files = array_filter(scandir($folder), function (string $f) {
                 return !($f === '.' || $f === '..');
             });
+            self::$_dirty[$folder] = $files;
             return array_map(function (string $f) use ($class, $folder, &$context) {
-                return $class::__intern_deserialize(CPTools::jsonDecode(file_get_contents($folder . $f)), $context);
+                if (array_key_exists($f, self::$_objectCache)) return self::$_objectCache[$f];
+                $obj = $class::__intern_deserialize(CPTools::jsonDecode(file_get_contents($folder . $f)), $context);
+                self::$_objectCache[$f] = $obj;
+                return $obj;
             }, $files);
         }
         return [];
@@ -147,13 +175,14 @@ trait DefaultPermanentObjectTrait {
      * Serialize property.
      * @param mixed $value The value.
      * @param array $context The context.
+     * @param bool $nonviable Whether the property is nonviable (and should be created as well), or not.
      * @return mixed
      * @throws NotImplementedException
      */
-    private function __serializeProperty(mixed $value, array &$context = []) : mixed {
+    private function __serializeProperty(mixed $value, array &$context = [], bool $nonviable = false) : mixed {
         if ($value instanceof APermanentObject) {
             $objId = self::getObjectId($value->getPermanentId(), $value->getPermanentClass());
-            if (!array_key_exists($objId, $context)) {
+            if (!array_key_exists($objId, $context) && $nonviable) {
                 $value->createPermanentObject($context);
             }
             return [
@@ -161,8 +190,8 @@ trait DefaultPermanentObjectTrait {
                 self::LINK_CLASS => $value->getPermanentClass()
             ];
         } else if (is_array($value)) {
-            return array_map(function (mixed $val) {
-                return $this->__serializeProperty($val);
+            return array_map(function (mixed $val) use ($context, $nonviable) {
+                return $this->__serializeProperty($val, $context, $nonviable);
             }, $value);
         } else return $value;
     }
