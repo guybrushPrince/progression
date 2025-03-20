@@ -15,9 +15,9 @@ interface GraphPart {
 
     /**
      * Get the id of the node.
-     * @return int|string|float
+     * @return int|string|float|null
      */
-    public function getId() : int|string|float;
+    public function getId() : int|string|float|null;
 
 }
 ?>

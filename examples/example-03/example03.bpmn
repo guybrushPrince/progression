@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0wmozlf" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.3.1">
+  <bpmn:process id="Process_01nl4wp" isExecutable="false">
+    <bpmn:startEvent id="Event_1celxvr">
+      <bpmn:outgoing>Flow_1id4tmd</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1id4tmd" sourceRef="Event_1celxvr" targetRef="Gateway_0mafsbm" />
+    <bpmn:sequenceFlow id="Flow_11fl4pf" sourceRef="Gateway_0mafsbm" targetRef="Activity_126nptx" />
+    <bpmn:sequenceFlow id="Flow_0hjv8ul" sourceRef="Gateway_0mafsbm" targetRef="Activity_1ilnpq8" />
+    <bpmn:parallelGateway id="Gateway_0mafsbm">
+      <bpmn:incoming>Flow_1id4tmd</bpmn:incoming>
+      <bpmn:outgoing>Flow_11fl4pf</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0hjv8ul</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="Flow_1y3kw7y" sourceRef="Activity_126nptx" targetRef="Gateway_1f1ukq1" />
+    <bpmn:sequenceFlow id="Flow_0q0g8fh" sourceRef="Activity_1ilnpq8" targetRef="Gateway_1f1ukq1" />
+    <bpmn:parallelGateway id="Gateway_1f1ukq1">
+      <bpmn:incoming>Flow_1y3kw7y</bpmn:incoming>
+      <bpmn:incoming>Flow_0q0g8fh</bpmn:incoming>
+      <bpmn:outgoing>Flow_1lszi76</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:endEvent id="Event_0mq7wco">
+      <bpmn:incoming>Flow_1lszi76</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1lszi76" sourceRef="Gateway_1f1ukq1" targetRef="Event_0mq7wco" />
+    <bpmn:scriptTask id="Activity_126nptx" name="Execute PHP Script 1">
+      <bpmn:incoming>Flow_11fl4pf</bpmn:incoming>
+      <bpmn:outgoing>Flow_1y3kw7y</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:scriptTask id="Activity_1ilnpq8" name="Execute PHP Script 2">
+      <bpmn:incoming>Flow_0hjv8ul</bpmn:incoming>
+      <bpmn:outgoing>Flow_0q0g8fh</bpmn:outgoing>
+    </bpmn:scriptTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_01nl4wp">
+      <bpmndi:BPMNShape id="Event_1celxvr_di" bpmnElement="Event_1celxvr">
+        <dc:Bounds x="152" y="172" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1at3cq6_di" bpmnElement="Gateway_0mafsbm">
+        <dc:Bounds x="245" y="165" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1un67mg_di" bpmnElement="Gateway_1f1ukq1">
+        <dc:Bounds x="475" y="165" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0mq7wco_di" bpmnElement="Event_0mq7wco">
+        <dc:Bounds x="562" y="172" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1079ne6_di" bpmnElement="Activity_126nptx">
+        <dc:Bounds x="340" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0reodom_di" bpmnElement="Activity_1ilnpq8">
+        <dc:Bounds x="340" y="220" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1id4tmd_di" bpmnElement="Flow_1id4tmd">
+        <di:waypoint x="188" y="190" />
+        <di:waypoint x="245" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11fl4pf_di" bpmnElement="Flow_11fl4pf">
+        <di:waypoint x="270" y="165" />
+        <di:waypoint x="270" y="120" />
+        <di:waypoint x="340" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0hjv8ul_di" bpmnElement="Flow_0hjv8ul">
+        <di:waypoint x="270" y="215" />
+        <di:waypoint x="270" y="260" />
+        <di:waypoint x="340" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1y3kw7y_di" bpmnElement="Flow_1y3kw7y">
+        <di:waypoint x="440" y="120" />
+        <di:waypoint x="500" y="120" />
+        <di:waypoint x="500" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0q0g8fh_di" bpmnElement="Flow_0q0g8fh">
+        <di:waypoint x="440" y="260" />
+        <di:waypoint x="500" y="260" />
+        <di:waypoint x="500" y="215" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1lszi76_di" bpmnElement="Flow_1lszi76">
+        <di:waypoint x="525" y="190" />
+        <di:waypoint x="562" y="190" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
