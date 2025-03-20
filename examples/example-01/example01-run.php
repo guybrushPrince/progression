@@ -38,5 +38,5 @@ $persistence->endTransaction();
 
 $instance = Engine::instance()->instantiate($processModel, $incident, null, 'thomas', 'ULe');
 
-echo 'Created process instance: ' . $instance->getPermanentId() . PHP_EOL
+echo 'Created process instance: ' . $instance->getPermanentId() . PHP_EOL;
 ?>

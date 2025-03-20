@@ -13,5 +13,5 @@ if (count($systemProcessInstance) >= 1) {
 
 $instance = Engine::instance()->instantiate($processModel, null, null);
 
-echo 'Created process instance: ' . $instance->getPermanentId() . PHP_EOL
+echo 'Created process instance: ' . $instance->getPermanentId() . PHP_EOL;
 ?>

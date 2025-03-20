@@ -3,7 +3,7 @@ include_once __DIR__ . '/../../php/engine/Engine.php';
 
 $persistence = SimplePersistence::instance();
 
-$processModel = CPProcessModel::getPermanentObject('Execute-PHP-Script-Process', 'CPProcessModel');
+$processModel = CPProcessModel::getPermanentObject('Exclusive-PHP-Scripts-Process', 'CPProcessModel');
 $systemProcessModel = CPProcessModel::getPermanentObject('__system', 'CPProcessModel');
 $systemProcessInstance = ProcessInstance::getPermanentObjectsWhere('processModel', $systemProcessModel, ProcessInstance::class);
 
