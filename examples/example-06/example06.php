@@ -8,7 +8,7 @@ $process01 = new CPProcessModel('Simple-Loop-Main-Process', __DIR__ . '/example0
 // The nodes
 $startEvent = new CPStartEvent('Event_0u7n7en');
 $phpScriptTask01 = new CPPHPExecuteTask('Activity_1lzzoqv', '$this->export("x"); $x = intval(readline("Please enter the number of iterations of the loop: "));');
-$phpScriptTask02 = new CPPHPExecuteTask('Activity_0wkx0an', 'echo "This is the " . $x . ". iteration." . PHP_EOL; $x--; $this->export("x");');
+$phpScriptTask02 = new CPPHPExecuteTask('Activity_0wkx0an', 'echo $x . " iterations remain." . PHP_EOL; $x--; $this->export("x");');
 $interEvent01 = new CPIntermediateEvent('Gateway_0s2a23y-Throw', CPEventDirection::THROWING, CPEventType::MESSAGE);
 $interEvent02 = new CPIntermediateEvent('Gateway_0s2a23y-Catch', CPEventDirection::CATCHING, CPEventType::MESSAGE);
 $endEvent = new CPEndEvent('Event_1o2q6cj');
