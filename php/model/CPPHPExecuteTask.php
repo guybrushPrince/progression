@@ -19,6 +19,12 @@ class CPPHPExecuteTask extends CPExecuteTask {
     use CPPHPExecuteTaskPersistentTrait;
 
     /**
+     * A list of variables to be exported.
+     * @var string[]
+     */
+    private array $exports = [];
+
+    /**
      * Constructor.
      * @param string|null $id The id (if available).
      * @param string|null $code The code (if available).
@@ -35,15 +41,25 @@ class CPPHPExecuteTask extends CPExecuteTask {
      */
     public function execute(array $context) : array|PendingResult {
         $context = self::prepareContext($context);
-        $code = implode(PHP_EOL, array_map(function (string $key) {
+        $code  = '$context = (function($context) {' . PHP_EOL;
+        $code .= '$_variables = array_keys($context);' . PHP_EOL;
+        $code .= implode(PHP_EOL, array_map(function (string $key) {
             return '$' . str_replace(' ', '_', $key) . ' = $context["' . $key . '"];';
         }, array_keys($context))) . PHP_EOL;
         $code .= $this->code . PHP_EOL;
-        $code .= implode(PHP_EOL, array_map(function (string $key) {
-            return '$context["' . $key . '"] = $' . str_replace(' ', '_', $key) . ';';
-        }, array_keys($context)));
+        $code .= 'foreach ($this->exports as $_export) {' . PHP_EOL;
+        $code .= '    if (in_array($_export, $_variables)) $_exportName = str_replace(\' \', \'_\', $_export);' . PHP_EOL;
+        $code .= '    else $_exportName = $_export;' . PHP_EOL;
+        $code .= '    $context[$_export] = $$_exportName;' . PHP_EOL;
+        $code .= '}' . PHP_EOL;
+        $code .= 'return $context;' . PHP_EOL;
+        $code .= '})($context);';
 
-        eval($code);
+        try {
+            eval($code);
+        } catch (Exception $exception) {
+
+        }
 
         return $context;
     }
@@ -60,5 +76,14 @@ class CPPHPExecuteTask extends CPExecuteTask {
      * @inheritDoc
      */
     public function cancel(array $context) : void { }
+
+    /**
+     * Export the given variable name.
+     * @param string $variable The variable.
+     * @return void
+     */
+    public function export(string $variable) : void {
+        $this->exports[$variable] = $variable;
+    }
 }
 ?>

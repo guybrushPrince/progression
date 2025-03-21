@@ -175,6 +175,7 @@ class Installer {
         $code .= '        $context[$objId] = &$s;' . PHP_EOL;
         foreach ($class->getProperties() as $property) {
             $type = $this->getType($property);
+            if (!$type) continue;
             $nonviable = $this->getAnnotation(self::NONVIABLE, $property);
             $code .= '        $s[\'' . $property->getName() . '\'] = $this->__serializeProperty($this->' .
                 self::getGetterName($property->getName(), $type) . '(), $context, ' .
@@ -205,6 +206,8 @@ class Installer {
         $code .= '        $objId =  \'' . $class->getName() . '-\' . $obj[\'' . $key->getName() . '\'];' . PHP_EOL;
         $code .= '        $context[$objId] = $o;' . PHP_EOL;
         foreach ($class->getProperties() as $property) {
+            $type = $this->getType($property);
+            if (!$type) continue;
             $code .= '        $o->' . $property->getName() . ' = $o->__deserializeProperty($obj[\'' . $property->getName() .
                 '\'], $context);' . PHP_EOL;
         }

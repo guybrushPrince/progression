@@ -424,7 +424,6 @@ class LocalState extends APermanentObject {
             $newContext->setContext(ContextSerializer::serialize($context));
             $newContext->createPermanentObject();
             SimplePersistence::instance()->endTransaction();
-            return;
         } else {
             $this->setStatePermanently(TokenState::PREVIOUSLY_LIVE);
             // Inform the output tokens (and incidents).

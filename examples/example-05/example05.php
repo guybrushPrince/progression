@@ -11,8 +11,8 @@ $phpScriptTask01 = new CPPHPExecuteTask('Activity_12dhe3q', 'echo "I call my sid
 $interEvent01 = new CPIntermediateEvent('Event_1xmecnx', CPEventDirection::THROWING, CPEventType::MESSAGE);
 $interEvent02 = new CPIntermediateEvent('Event_0bhlt6v', CPEventDirection::CATCHING, CPEventType::MESSAGE);
 $xorSplit = new CPXORGateway('Gateway_1195arz');
-$phpScriptTask02 = new CPPHPExecuteTask('Activity_0w4spfn', 'echo $context["x"] . " is greater than 5" . PHP_EOL;');
-$phpScriptTask03 = new CPPHPExecuteTask('Activity_0h2vru0', 'echo $context["x"] . " is lower or equal to 5" . PHP_EOL;');
+$phpScriptTask02 = new CPPHPExecuteTask('Activity_0w4spfn', 'echo $x . " is greater than 5" . PHP_EOL;');
+$phpScriptTask03 = new CPPHPExecuteTask('Activity_0h2vru0', 'echo $x . " is lower or equal to 5" . PHP_EOL;');
 $xorJoin = new CPXORGateway('Gateway_07l7i5f');
 $endEvent = new CPEndEvent('Event_1679jyw');
 
@@ -55,7 +55,7 @@ $process02 = new CPProcessModel('Message-Send-Sidekick-Process', __DIR__ . '/exa
 
 // The nodes
 $startEvent_sk = new CPStartEvent('Event_0ia7wo0', CPEventType::MESSAGE);
-$phpScriptTask01_sk = new CPPHPExecuteTask('Activity_1tw3l6v', '$context["x"] = intval(readline("Please enter an integer: "));');
+$phpScriptTask01_sk = new CPPHPExecuteTask('Activity_1tw3l6v', '$x = intval(readline("Please enter an integer: ")); $this->export("x");');
 $endEvent_sk = new CPEndEvent('Event_01vryov', CPEventType::MESSAGE);
 
 // The flows

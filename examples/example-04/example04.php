@@ -7,10 +7,10 @@ $process = new CPProcessModel('Exclusive-PHP-Scripts-Process', __DIR__ . '/examp
 
 // The nodes
 $startEvent = new CPStartEvent('Event_011ii0y');
-$phpScriptTask01 = new CPPHPExecuteTask('Activity_1uvnau8', '$context["x"] = intval(readline("Please enter an integer: "));');
+$phpScriptTask01 = new CPPHPExecuteTask('Activity_1uvnau8', '$x = intval(readline("Please enter an integer: ")); $this->export("x");');
 $xorSplit = new CPXORGateway('Gateway_009hgqn');
-$phpScriptTask02 = new CPPHPExecuteTask('Activity_1xos86o', 'echo $context["x"] . " is greater than 5" . PHP_EOL;');
-$phpScriptTask03 = new CPPHPExecuteTask('Activity_1fqu72k', 'echo $context["x"] . " is lower or equal to 5" . PHP_EOL;');
+$phpScriptTask02 = new CPPHPExecuteTask('Activity_1xos86o', 'echo $x . " is greater than 5" . PHP_EOL;');
+$phpScriptTask03 = new CPPHPExecuteTask('Activity_1fqu72k', 'echo $x . " is lower or equal to 5" . PHP_EOL;');
 $xorJoin = new CPXORGateway('Gateway_0442vim');
 $endEvent = new CPEndEvent('Event_1gyzhrw');
 
